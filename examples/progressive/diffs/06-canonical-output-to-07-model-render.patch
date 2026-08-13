@@ -1,0 +1,8 @@
+diff --git a/examples/progressive/checkpoints/06-canonical-output.ts b/examples/progressive/checkpoints/07-model-render.ts
+--- a/examples/progressive/checkpoints/06-canonical-output.ts
++++ b/examples/progressive/checkpoints/07-model-render.ts
+@@ -41,0 +42,4 @@
++
++function renderGreeting(value: GreetValue) {
++  return [{ type: 'text' as const, text: value.message }]
++}

@@ -1,0 +1,16 @@
+diff --git a/examples/progressive/checkpoints/08-execution.ts b/examples/progressive/checkpoints/09-presentation.ts
+--- a/examples/progressive/checkpoints/08-execution.ts
++++ b/examples/progressive/checkpoints/09-presentation.ts
+@@ -3,0 +4,2 @@
++import type { ToolCallView } from '@deepseek-ai/dsh-tools'
++
+@@ -58,0 +61,9 @@
++
++function presentGreetCall(args: GreetArgs): ToolCallView {
++  return {
++    card: 'generic',
++    title: 'Greet person',
++    kind: 'other',
++    rawInput: args,
++  }
++}

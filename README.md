@@ -49,7 +49,7 @@ pnpm check
 pnpm preview
 ```
 
-打开 `http://127.0.0.1:4175`。正文越过三个 checkpoint 时，右侧 `src/index.ts` 会从空文件逐步增长到完整插件；每步只显示正文已经解释的新增行，并按相邻快照 diff 显示。阅读器只投影仓库中的 Markdown 和自动生成快照，不维护第二份教程源码，也不部署网站。
+打开 `http://127.0.0.1:4175`。正文越过十个 checkpoint 时，右侧 `src/index.ts` 会从空文件逐步增长到完整插件；每个 checkpoint 都位于对应解释和代码片段之后，只显示刚刚讲过的新增行。阅读器只投影仓库中的 Markdown、checkpoint manifest 和自动生成快照，不维护第二份教程源码，也不部署网站。
 
 ## 安装进 Harness profile
 
@@ -88,15 +88,22 @@ dsh plugin --profile tutorial add 'github:Opr4Mp3r/deepseek-harness-plugin-from-
 
 ## 像读文章一样看代码
 
-`examples/progressive/src/index.ts` 是唯一手工维护的最终源码。三份 checkpoint 由它生成，CI 验证每一步只能在上一步末尾继续添加，最终一步必须与源码逐字相同。
+`examples/progressive/src/index.ts` 是唯一手工维护的最终源码。十份 checkpoint 由它生成，CI 验证每一步只能插入新行，manifest、源码 marker 与教程 marker 必须一一对应，最终一步必须与源码逐字相同。所有快照都进入同一个严格 TypeScript program，因此中间步骤也必须能够类型检查。
 
 | 进度 | 本步目标 | 阅读代码 | 与上一步比较 | 运行证据 |
 |---|---|---|---|---|
-| 1/3 | 插件身份与必需依赖 | [`01-plugin.ts`](examples/progressive/checkpoints/01-plugin.ts) | — | `pnpm check:checkpoints` |
-| 2/3 | TypeScript 类型 + 运行时 Config schema | [`02-config.ts`](examples/progressive/checkpoints/02-config.ts) | [`01 → 02`](examples/progressive/diffs/01-plugin-to-02-config.patch) | `pnpm check:checkpoints` |
-| 3/3 | canonical output、render、execute、UI intent | [`03-tool.ts`](examples/progressive/checkpoints/03-tool.ts) | [`02 → 03`](examples/progressive/diffs/02-config-to-03-tool.patch) | `pnpm test` |
+| 1/10 | 插件身份与必需依赖 | [`01-identity.ts`](examples/progressive/checkpoints/01-identity.ts) | — | `pnpm typecheck` |
+| 2/10 | 部署者的配置类型 | [`02-config-type.ts`](examples/progressive/checkpoints/02-config-type.ts) | [`01 → 02`](examples/progressive/diffs/01-identity-to-02-config-type.patch) | `pnpm typecheck` |
+| 3/10 | Loader 运行时 schema | [`03-config-schema.ts`](examples/progressive/checkpoints/03-config-schema.ts) | [`02 → 03`](examples/progressive/diffs/02-config-type-to-03-config-schema.patch) | `pnpm typecheck` |
+| 4/10 | 已解析的运行时配置 | [`04-resolved-config.ts`](examples/progressive/checkpoints/04-resolved-config.ts) | [`03 → 04`](examples/progressive/diffs/03-config-schema-to-04-resolved-config.patch) | `pnpm typecheck` |
+| 5/10 | 模型输入协议 | [`05-model-input.ts`](examples/progressive/checkpoints/05-model-input.ts) | [`04 → 05`](examples/progressive/diffs/04-resolved-config-to-05-model-input.patch) | `pnpm typecheck` |
+| 6/10 | canonical output | [`06-canonical-output.ts`](examples/progressive/checkpoints/06-canonical-output.ts) | [`05 → 06`](examples/progressive/diffs/05-model-input-to-06-canonical-output.patch) | `pnpm typecheck` |
+| 7/10 | 模型文本渲染 | [`07-model-render.ts`](examples/progressive/checkpoints/07-model-render.ts) | [`06 → 07`](examples/progressive/diffs/06-canonical-output-to-07-model-render.patch) | `pnpm typecheck` |
+| 8/10 | 执行与值约束 | [`08-execution.ts`](examples/progressive/checkpoints/08-execution.ts) | [`07 → 08`](examples/progressive/diffs/07-model-render-to-08-execution.patch) | `pnpm typecheck` |
+| 9/10 | UI render intent | [`09-presentation.ts`](examples/progressive/checkpoints/09-presentation.ts) | [`08 → 09`](examples/progressive/diffs/08-execution-to-09-presentation.patch) | `pnpm typecheck` |
+| 10/10 | 注册完整插件 | [`10-assembly.ts`](examples/progressive/checkpoints/10-assembly.ts) | [`09 → 10`](examples/progressive/diffs/09-presentation-to-10-assembly.patch) | `pnpm test` |
 
-diff 也是由同一个生成器产生的 unified patch，因此读者在 GitHub 内就能看到本步新增代码。想修改教程代码时，只改 `src/index.ts` 与 `checkpoints.json`，然后运行：
+diff 也是由同一个生成器产生的 unified patch，因此读者在 GitHub 内就能看到本步新增代码。想修改教程时，同步更新 `src/index.ts`、`checkpoints.json` 和正文中的对应解释与 marker，然后运行：
 
 ```sh
 pnpm generate:checkpoints
@@ -106,7 +113,7 @@ pnpm check
 ## 学习路径
 
 1. [架构地图](docs/00-architecture-map.md)：插件、Context、Service、event、Session log 如何协作。
-2. [最小插件](docs/01-minimal-plugin.md)：从空 `apply` 到一个完整工具。
+2. [最小插件](docs/01-minimal-plugin.md)：从空仓库到一个完整工具，每段解释只引入对应代码。
 3. [生命周期与 effect](docs/02-lifecycle-and-effects.md)：HMR、安全释放、必需与可选依赖。
 4. [能力三角色](docs/03-capability-seams.md)：什么时候拆 Definition / Provider / Consumer，以及四种常见拓扑。
 5. [事件与持久化](docs/04-events-and-durability.md)：waterfall、commit point、`model-visible ⇔ logged`。

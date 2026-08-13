@@ -1,0 +1,16 @@
+diff --git a/examples/progressive/checkpoints/05-model-input.ts b/examples/progressive/checkpoints/06-canonical-output.ts
+--- a/examples/progressive/checkpoints/05-model-input.ts
++++ b/examples/progressive/checkpoints/06-canonical-output.ts
+@@ -2,0 +3,1 @@
++import type { InferValue, ValueSchemaSpec } from '@deepseek-ai/dsh-tools'
+@@ -30,0 +32,10 @@
++
++const greetOutputSchema = {
++  type: 'object',
++  additionalProperties: false,
++  properties: {
++    message: { type: 'string', required: true },
++  },
++} as const satisfies ValueSchemaSpec
++
++type GreetValue = InferValue<typeof greetOutputSchema>

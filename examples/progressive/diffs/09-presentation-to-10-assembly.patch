@@ -1,0 +1,28 @@
+diff --git a/examples/progressive/checkpoints/09-presentation.ts b/examples/progressive/checkpoints/10-assembly.ts
+--- a/examples/progressive/checkpoints/09-presentation.ts
++++ b/examples/progressive/checkpoints/10-assembly.ts
+@@ -0,0 +1,4 @@
++/** Register a configurable `greet` tool with lifecycle cleanup. */
++
++import type { Context } from '@deepseek-ai/cordis'
++import { defineTool } from '@deepseek-ai/dsh-tools'
+@@ -69,0 +74,19 @@
++
++export function apply(ctx: Context, config: Config): void {
++  const resolved = resolveConfig(config)
++  ctx.tools.register(defineTool({
++    name: 'greet',
++    description: 'Greet one person by name.',
++    parameters: greetParameters,
++    output: {
++      schema: greetOutputSchema,
++      render: (_args, value) =>
++        renderGreeting(value),
++    },
++    execute: args => executeGreeting(
++      resolved,
++      args,
++    ),
++    presentCall: presentGreetCall,
++  }))
++}

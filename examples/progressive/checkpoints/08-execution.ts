@@ -1,41 +1,25 @@
-// checkpoint:10-assembly
-/** Register a configurable `greet` tool with lifecycle cleanup. */
-
-import type { Context } from '@deepseek-ai/cordis'
-import { defineTool } from '@deepseek-ai/dsh-tools'
-// checkpoint:03-config-schema
 import z from '@deepseek-ai/schemastery'
-// checkpoint:05-model-input
 import type { InferArgs, ParameterSchemaSpec } from '@deepseek-ai/dsh-tools'
-// checkpoint:06-canonical-output
 import type { InferValue, ValueSchemaSpec } from '@deepseek-ai/dsh-tools'
-// checkpoint:09-presentation
-import type { ToolCallView } from '@deepseek-ai/dsh-tools'
-
-// checkpoint:01-identity
 export const name = 'greet-tool'
 export const inject = ['tools']
 
-// checkpoint:02-config-type
 export interface Config {
   greeting?: string
   excited?: boolean
 }
 
-// checkpoint:03-config-schema
 export const Config: z<Config> = z.object({
   greeting: z.string().default('Hello'),
   excited: z.boolean().default(false),
 })
 
-// checkpoint:04-resolved-config
 type ResolvedConfig = Required<Config>
 
 function resolveConfig(config: Config): ResolvedConfig {
   return config as ResolvedConfig
 }
 
-// checkpoint:05-model-input
 const greetParameters = {
   name: {
     type: 'string',
@@ -46,7 +30,6 @@ const greetParameters = {
 
 type GreetArgs = InferArgs<typeof greetParameters>
 
-// checkpoint:06-canonical-output
 const greetOutputSchema = {
   type: 'object',
   additionalProperties: false,
@@ -57,12 +40,10 @@ const greetOutputSchema = {
 
 type GreetValue = InferValue<typeof greetOutputSchema>
 
-// checkpoint:07-model-render
 function renderGreeting(value: GreetValue) {
   return [{ type: 'text' as const, text: value.message }]
 }
 
-// checkpoint:08-execution
 async function executeGreeting(
   config: ResolvedConfig,
   args: GreetArgs,
@@ -74,34 +55,4 @@ async function executeGreeting(
   const punctuation = config.excited ? '!' : '.'
   const sentence = `${config.greeting}, ${person}`
   return { message: sentence + punctuation }
-}
-
-// checkpoint:09-presentation
-function presentGreetCall(args: GreetArgs): ToolCallView {
-  return {
-    card: 'generic',
-    title: 'Greet person',
-    kind: 'other',
-    rawInput: args,
-  }
-}
-
-// checkpoint:10-assembly
-export function apply(ctx: Context, config: Config): void {
-  const resolved = resolveConfig(config)
-  ctx.tools.register(defineTool({
-    name: 'greet',
-    description: 'Greet one person by name.',
-    parameters: greetParameters,
-    output: {
-      schema: greetOutputSchema,
-      render: (_args, value) =>
-        renderGreeting(value),
-    },
-    execute: args => executeGreeting(
-      resolved,
-      args,
-    ),
-    presentCall: presentGreetCall,
-  }))
 }

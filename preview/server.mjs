@@ -29,52 +29,76 @@ try {
   smoke = { ok: false, value: error instanceof Error ? error.message : String(error) }
 }
 
-const checkpointDefinitions = [
-  {
-    id: '01-plugin',
-    title: '声明插件和依赖',
-    heading: '第一步：声明插件身份和必需依赖',
-    file: 'src/index.ts',
-    snapshot: 'examples/progressive/checkpoints/01-plugin.ts',
-    focus: [1, 2],
-  },
-  {
-    id: '02-config',
-    title: '加入运行时配置',
-    heading: '第二步：同时定义类型和运行时 schema',
-    file: 'src/index.ts',
-    snapshot: 'examples/progressive/checkpoints/02-config.ts',
-    focus: [6, 14],
-  },
-  {
-    id: '03-tool',
-    title: '注册完整工具',
-    heading: '第三步：注册工具',
-    file: 'src/index.ts',
-    snapshot: 'examples/progressive/checkpoints/03-tool.ts',
-    focus: [22, 27],
-  },
-]
+const checkpointManifest = JSON.parse(
+  await readFile(resolve(root, 'examples/progressive/checkpoints.json'), 'utf8'),
+)
+if (
+  typeof checkpointManifest.source !== 'string'
+  || typeof checkpointManifest.file !== 'string'
+  || typeof checkpointManifest.tutorial !== 'string'
+  || !Array.isArray(checkpointManifest.checkpoints)
+) {
+  throw new Error('progressive checkpoint manifest is missing preview metadata')
+}
+const checkpointDefinitions = checkpointManifest.checkpoints.map(checkpoint => {
+  if (
+    typeof checkpoint.id !== 'string'
+    || typeof checkpoint.title !== 'string'
+    || !Array.isArray(checkpoint.focus)
+    || checkpoint.focus.length !== 2
+    || !checkpoint.focus.every(Number.isInteger)
+  ) {
+    throw new Error(`invalid preview checkpoint: ${JSON.stringify(checkpoint)}`)
+  }
+  return {
+    ...checkpoint,
+    file: checkpointManifest.file,
+    snapshot: `examples/progressive/checkpoints/${checkpoint.id}.ts`,
+  }
+})
+if (checkpointDefinitions.length === 0) throw new Error('preview needs at least one checkpoint')
 
-const tutorialMarkdown = await readFile(resolve(root, 'docs/01-minimal-plugin.md'), 'utf8')
+const canonicalSource = await readFile(
+  resolve(root, 'examples/progressive', checkpointManifest.source),
+  'utf8',
+)
+
+function checkpointAddedLines(source, id) {
+  const target = Number(id.slice(0, 2))
+  const added = []
+  let activeId
+  let renderedLine = 0
+  for (const line of source.trimEnd().split('\n')) {
+    const marker = /^\/\/ checkpoint:(\d{2}-[a-z0-9-]+)$/.exec(line)
+    if (marker !== null) {
+      activeId = marker[1]
+      continue
+    }
+    if (activeId === undefined || Number(activeId.slice(0, 2)) > target) continue
+    renderedLine += 1
+    if (activeId === id) added.push(renderedLine)
+  }
+  if (added.length === 0) throw new Error(`checkpoint ${id} has no attributed source lines`)
+  return added
+}
+
+const tutorialMarkdown = await readFile(resolve(root, checkpointManifest.tutorial), 'utf8')
 const tutorialCheckpoints = await Promise.all(checkpointDefinitions.map(async definition => ({
   ...definition,
   code: await readFile(resolve(root, definition.snapshot), 'utf8'),
+  addedLines: checkpointAddedLines(canonicalSource, definition.id),
 })))
 
-let previousCheckpointLine = -1
-const tutorialLines = tutorialMarkdown.split('\n')
-for (const checkpoint of tutorialCheckpoints) {
-  const marker = `## ${checkpoint.heading}`
-  const matchingLines = tutorialLines.flatMap((line, index) => line === marker ? [index] : [])
-  if (matchingLines.length !== 1 || matchingLines[0] === undefined) {
-    throw new Error(`tutorial checkpoint heading must appear exactly once: ${marker}`)
-  }
-  if (matchingLines[0] <= previousCheckpointLine) {
-    throw new Error(`tutorial checkpoint headings are out of order: ${marker}`)
-  }
-  previousCheckpointLine = matchingLines[0]
+const tutorialMarkerIds = Array.from(
+  tutorialMarkdown.matchAll(/^<!-- checkpoint:(\d{2}-[a-z0-9-]+) -->$/gm),
+  match => match[1],
+)
+const manifestIds = tutorialCheckpoints.map(checkpoint => checkpoint.id)
+if (JSON.stringify(tutorialMarkerIds) !== JSON.stringify(manifestIds)) {
+  throw new Error('tutorial checkpoint markers must match the manifest exactly and in order')
 }
+const finalCheckpoint = tutorialCheckpoints.at(-1)
+if (finalCheckpoint === undefined) throw new Error('preview needs a final checkpoint')
 
 const navigation = [
   ['/', '互动教程'],
@@ -88,7 +112,7 @@ const navigation = [
   ['/docs/anti-patterns.md', '反模式'],
   ['/docs/checklist.md', '交付检查单'],
   ['/docs/audit-report.md', '审计证据'],
-  ['/examples/progressive/checkpoints/03-tool.ts', '最终插件代码'],
+  [`/examples/progressive/checkpoints/${finalCheckpoint.id}.ts`, '最终插件代码'],
 ]
 
 function escapeHtml(value) {
@@ -203,19 +227,20 @@ function documentLayout(title, body, currentPath) {
 function tutorialBody() {
   let markdown = tutorialMarkdown
   for (const checkpoint of tutorialCheckpoints) {
-    const heading = `## ${checkpoint.heading}`
+    const marker = `<!-- checkpoint:${checkpoint.id} -->`
     const anchor = `<div class="checkpoint-anchor" data-checkpoint="${checkpoint.id}" aria-hidden="true"></div>\n\n`
-    markdown = markdown.replace(heading, `${anchor}${heading}`)
+    markdown = markdown.replace(marker, anchor)
   }
   return addHeadingIds(marked.parse(markdown))
 }
 
 function tutorialLayout() {
-  const checkpointPayload = tutorialCheckpoints.map(({ id, title, file, focus, code }) => ({
+  const checkpointPayload = tutorialCheckpoints.map(({ id, title, file, focus, code, addedLines }) => ({
     id,
     title,
     file,
     focus,
+    addedLines,
     repo: { [file]: code },
   }))
   const smokeText = escapeHtml(JSON.stringify(smoke.value, null, 2))
@@ -578,6 +603,7 @@ function tutorialLayout() {
       if (state.activeIndex < 0) return new Set()
       const checkpoint = checkpoints[state.activeIndex]
       if (checkpoint.file !== file) return new Set()
+      if (Array.isArray(checkpoint.addedLines)) return new Set(checkpoint.addedLines)
       return addedLines(state.previousRepo[file] || '', state.repo[file] || '')
     }
 

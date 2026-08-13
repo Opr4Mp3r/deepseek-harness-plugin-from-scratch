@@ -1,0 +1,9 @@
+diff --git a/examples/progressive/checkpoints/01-identity.ts b/examples/progressive/checkpoints/02-config-type.ts
+--- a/examples/progressive/checkpoints/01-identity.ts
++++ b/examples/progressive/checkpoints/02-config-type.ts
+@@ -2,0 +3,5 @@
++
++export interface Config {
++  greeting?: string
++  excited?: boolean
++}

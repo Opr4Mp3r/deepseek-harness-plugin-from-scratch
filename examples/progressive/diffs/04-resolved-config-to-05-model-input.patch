@@ -1,0 +1,16 @@
+diff --git a/examples/progressive/checkpoints/04-resolved-config.ts b/examples/progressive/checkpoints/05-model-input.ts
+--- a/examples/progressive/checkpoints/04-resolved-config.ts
++++ b/examples/progressive/checkpoints/05-model-input.ts
+@@ -1,0 +2,1 @@
++import type { InferArgs, ParameterSchemaSpec } from '@deepseek-ai/dsh-tools'
+@@ -19,0 +21,10 @@
++
++const greetParameters = {
++  name: {
++    type: 'string',
++    required: true,
++    description: 'The person to greet.',
++  },
++} as const satisfies ParameterSchemaSpec
++
++type GreetArgs = InferArgs<typeof greetParameters>

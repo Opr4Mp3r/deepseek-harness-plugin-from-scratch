@@ -1,0 +1,10 @@
+diff --git a/examples/progressive/checkpoints/03-config-schema.ts b/examples/progressive/checkpoints/04-resolved-config.ts
+--- a/examples/progressive/checkpoints/03-config-schema.ts
++++ b/examples/progressive/checkpoints/04-resolved-config.ts
+@@ -13,0 +14,6 @@
++
++type ResolvedConfig = Required<Config>
++
++function resolveConfig(config: Config): ResolvedConfig {
++  return config as ResolvedConfig
++}

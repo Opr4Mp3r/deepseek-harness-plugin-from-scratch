@@ -1,9 +1,16 @@
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
+import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { Script } from 'node:vm'
 
 const root = resolve(import.meta.dirname, '..')
+const checkpointManifest = JSON.parse(
+  await readFile(resolve(root, 'examples/progressive/checkpoints.json'), 'utf8'),
+)
+const checkpointIds = checkpointManifest.checkpoints.map(checkpoint => checkpoint.id)
+const finalCheckpointId = checkpointIds.at(-1)
+if (finalCheckpointId === undefined) throw new Error('preview verifier needs a final checkpoint')
 const child = spawn(process.execPath, ['preview/server.mjs', '.', '0'], {
   cwd: root,
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -40,8 +47,10 @@ try {
   const tutorial = await request('/')
   if (tutorial.response.status !== 200) throw new Error(`tutorial returned ${tutorial.response.status}`)
   const checkpoints = tutorial.body.match(/data-checkpoint="[^"]+"/g) ?? []
-  if (checkpoints.length !== 3) throw new Error(`tutorial rendered ${checkpoints.length} checkpoints`)
-  for (const id of ['01-plugin', '02-config', '03-tool']) {
+  if (checkpoints.length !== checkpointIds.length) {
+    throw new Error(`tutorial rendered ${checkpoints.length} of ${checkpointIds.length} checkpoints`)
+  }
+  for (const id of checkpointIds) {
     if (!tutorial.body.includes(`data-checkpoint="${id}"`)) throw new Error(`tutorial omitted checkpoint ${id}`)
   }
   if (!tutorial.body.includes('真实 Loader smoke 已通过') || !tutorial.body.includes('Welcome, Ada!')) {
@@ -61,7 +70,7 @@ try {
   if (clientScript === undefined) throw new Error('tutorial omitted its client script')
   new Script(clientScript, { filename: 'preview-client.js' })
 
-  for (const path of ['/docs/00-architecture-map.md', '/examples/progressive/checkpoints/03-tool.ts']) {
+  for (const path of ['/docs/00-architecture-map.md', `/examples/progressive/checkpoints/${finalCheckpointId}.ts`]) {
     const page = await request(path)
     if (page.response.status !== 200) throw new Error(`${path} returned ${page.response.status}`)
   }

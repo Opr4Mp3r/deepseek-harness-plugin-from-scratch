@@ -1,17 +1,57 @@
 {
   "source": "src/index.ts",
+  "file": "src/index.ts",
+  "tutorial": "docs/01-minimal-plugin.md",
   "checkpoints": [
     {
-      "id": "01-plugin",
-      "title": "声明插件和依赖"
+      "id": "01-identity",
+      "title": "声明插件身份和必需依赖",
+      "focus": [1, 2]
     },
     {
-      "id": "02-config",
-      "title": "加入运行时配置"
+      "id": "02-config-type",
+      "title": "写出部署者可以提供的配置",
+      "focus": [4, 7]
     },
     {
-      "id": "03-tool",
-      "title": "注册完整工具"
+      "id": "03-config-schema",
+      "title": "让 Loader 校验并补全配置",
+      "focus": [10, 13]
+    },
+    {
+      "id": "04-resolved-config",
+      "title": "把已校验配置变成运行时类型",
+      "focus": [15, 19]
+    },
+    {
+      "id": "05-model-input",
+      "title": "定义模型可以提交的参数",
+      "focus": [22, 30]
+    },
+    {
+      "id": "06-canonical-output",
+      "title": "定义程序使用的规范结果",
+      "focus": [33, 41]
+    },
+    {
+      "id": "07-model-render",
+      "title": "把规范结果渲染给模型",
+      "focus": [43, 45]
+    },
+    {
+      "id": "08-execution",
+      "title": "实现执行和字符串值约束",
+      "focus": [47, 58]
+    },
+    {
+      "id": "09-presentation",
+      "title": "声明 UI 如何展示调用",
+      "focus": [62, 69]
+    },
+    {
+      "id": "10-assembly",
+      "title": "把各部分注册成完整插件",
+      "focus": [75, 92]
     }
   ]
 }

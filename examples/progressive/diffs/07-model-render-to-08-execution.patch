@@ -1,0 +1,17 @@
+diff --git a/examples/progressive/checkpoints/07-model-render.ts b/examples/progressive/checkpoints/08-execution.ts
+--- a/examples/progressive/checkpoints/07-model-render.ts
++++ b/examples/progressive/checkpoints/08-execution.ts
+@@ -45,0 +46,13 @@
++
++async function executeGreeting(
++  config: ResolvedConfig,
++  args: GreetArgs,
++): Promise<GreetValue> {
++  const person = args.name.trim()
++  if (person.length === 0) {
++    throw new Error('greet: `name` must not be blank')
++  }
++  const punctuation = config.excited ? '!' : '.'
++  const sentence = `${config.greeting}, ${person}`
++  return { message: sentence + punctuation }
++}
