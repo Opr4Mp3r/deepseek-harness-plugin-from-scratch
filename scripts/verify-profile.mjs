@@ -13,7 +13,11 @@ const cliVersion = manifest.profileBaseline?.['@deepseek-ai/dsh']
 if (typeof cliVersion !== 'string') throw new Error('audit manifest needs a profile CLI baseline')
 const sourceHarnessRoot = process.env.DSH_HARNESS_ROOT
 const dshCommand = sourceHarnessRoot === undefined
-  ? { executable: 'pnpm', prefix: ['dlx', `@deepseek-ai/dsh@${cliVersion}`], cwd: root }
+  ? {
+      executable: 'pnpm',
+      prefix: ['dlx', '--allow-build=node-pty', `@deepseek-ai/dsh@${cliVersion}`],
+      cwd: root,
+    }
   : {
       executable: process.execPath,
       prefix: ['--import', 'tsx/esm', resolve(sourceHarnessRoot, 'apps/cli/src/bin.ts')],
