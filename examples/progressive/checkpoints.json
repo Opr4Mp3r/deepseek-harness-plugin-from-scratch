@@ -3,18 +3,15 @@
   "checkpoints": [
     {
       "id": "01-plugin",
-      "title": "声明插件和依赖",
-      "through": "// checkpoint:config"
+      "title": "声明插件和依赖"
     },
     {
       "id": "02-config",
-      "title": "加入运行时配置",
-      "through": "// checkpoint:tool"
+      "title": "加入运行时配置"
     },
     {
       "id": "03-tool",
-      "title": "注册完整工具",
-      "through": null
+      "title": "注册完整工具"
     }
   ]
 }

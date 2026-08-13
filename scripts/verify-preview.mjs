@@ -50,7 +50,14 @@ try {
   for (const marker of ['function addedLines(', 'innerHeight * 0.42', 'id="editor-lock"', 'id="mobile-panel-button"']) {
     if (!tutorial.body.includes(marker)) throw new Error(`tutorial omitted interaction marker ${marker}`)
   }
-  const clientScript = /<script>([\s\S]*?)<\/script>\s*<\/body>/.exec(tutorial.body)?.[1]
+  for (const marker of ['id="theme-toggle"', 'id="mobile-nav-toggle"', 'id="chapter-nav"']) {
+    if (!tutorial.body.includes(marker)) throw new Error(`tutorial omitted responsive navigation marker ${marker}`)
+  }
+  if (!tutorial.body.includes('localStorage.setItem(\'reader-theme\'')) {
+    throw new Error('tutorial omitted persistent manual theme selection')
+  }
+  const clientScripts = Array.from(tutorial.body.matchAll(/<script>([\s\S]*?)<\/script>/g), match => match[1])
+  const clientScript = clientScripts.at(-1)
   if (clientScript === undefined) throw new Error('tutorial omitted its client script')
   new Script(clientScript, { filename: 'preview-client.js' })
 

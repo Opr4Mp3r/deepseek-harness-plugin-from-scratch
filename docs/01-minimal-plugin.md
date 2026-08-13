@@ -2,6 +2,12 @@
 
 教程先写一个 `greet` 工具。它不值得拆成独立 capability seam：没有可替换后端，也没有独立演进的 service interface。一个函数插件就足够。
 
+右侧一开始是空仓库。下面每个步骤越过视口中的阅读线时，只会出现正文已经解释过的代码；向上滚动则回到前一份快照。最终快照与可构建、可安装的插件源码一致。
+
+> 想停下来浏览代码时，点击编辑器右上角的锁。快照仍会随正文演进，但页面不会抢走你正在看的文件和位置；解锁后立即回到当前步骤。
+
+这章只做三件事：声明插件与依赖、增加可校验配置、注册一个完整工具。先把最小路径跑通，后续章节再扩展生命周期、能力三角色和持久化事件。
+
 ## 第一步：声明插件身份和必需依赖
 
 [查看本步完整代码](../examples/progressive/checkpoints/01-plugin.ts)
@@ -31,11 +37,15 @@ export const Config: z<Config> = z.object({
 })
 ```
 
+配置作者可以省略带默认值的字段，因此公开的 `Config` 保持 optional；schema 校验完成后，`ResolvedConfig = Required<Config>` 记录运行阶段两个字段都已存在。
+
 TypeScript interface 只在编译期存在。Loader 需要 Standard Schema 才能在挂载前校验 `cordis.yml` 并填充默认值。DSL 表达不了的跨字段或值约束仍需在加载或执行的最早可判定点验证。
 
 ## 第三步：注册工具
 
 [查看最终代码](../examples/progressive/checkpoints/03-tool.ts)
+
+最后补上模块职责说明，引入 Harness 的 `Context` 类型和 `defineTool()`，再导出 Loader 会调用的 `apply()`。模块仍然只有 named exports；`ctx.tools.register()` 把工具注册到当前 plugin fiber。
 
 一个工具有四种不同的公开事实：
 

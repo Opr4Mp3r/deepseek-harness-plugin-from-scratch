@@ -1,17 +1,12 @@
-/**
- * Final tutorial plugin: a configurable `greet` tool whose registration follows
- * the Cordis fiber lifecycle.
- */
+/** Register a configurable `greet` tool with Cordis lifecycle cleanup. */
 
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import z from '@deepseek-ai/schemastery'
 
-// checkpoint:plugin
 export const name = 'greet-tool'
 export const inject = ['tools']
 
-// checkpoint:config
 export interface Config {
   greeting?: string
   excited?: boolean
@@ -24,7 +19,6 @@ export const Config: z<Config> = z.object({
 
 type ResolvedConfig = Required<Config>
 
-// checkpoint:tool
 export function apply(ctx: Context, config: Config): void {
   const resolved = config as ResolvedConfig
   ctx.tools.register(defineTool({

@@ -1,9 +1,13 @@
 diff --git a/examples/progressive/checkpoints/02-config.ts b/examples/progressive/checkpoints/03-tool.ts
 --- a/examples/progressive/checkpoints/02-config.ts
 +++ b/examples/progressive/checkpoints/03-tool.ts
-@@ -25,0 +26,40 @@
+@@ -0,0 +1,4 @@
++/** Register a configurable `greet` tool with Cordis lifecycle cleanup. */
 +
-+// checkpoint:tool
++import type { Context } from '@deepseek-ai/cordis'
++import { defineTool } from '@deepseek-ai/dsh-tools'
+@@ -16,0 +21,39 @@
++
 +export function apply(ctx: Context, config: Config): void {
 +  const resolved = config as ResolvedConfig
 +  ctx.tools.register(defineTool({

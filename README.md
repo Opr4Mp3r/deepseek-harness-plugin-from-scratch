@@ -49,7 +49,7 @@ pnpm check
 pnpm preview
 ```
 
-打开 `http://127.0.0.1:4175`。正文越过三个 checkpoint 时，右侧 `src/index.ts` 会从空文件增长到 12、25、65 行；新增行按相邻快照 diff 显示。阅读器只投影仓库中的 Markdown 和自动生成快照，不维护第二份教程源码，也不部署网站。
+打开 `http://127.0.0.1:4175`。正文越过三个 checkpoint 时，右侧 `src/index.ts` 会从空文件逐步增长到完整插件；每步只显示正文已经解释的新增行，并按相邻快照 diff 显示。阅读器只投影仓库中的 Markdown 和自动生成快照，不维护第二份教程源码，也不部署网站。
 
 ## 安装进 Harness profile
 

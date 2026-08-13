@@ -36,7 +36,7 @@ const checkpointDefinitions = [
     heading: '第一步：声明插件身份和必需依赖',
     file: 'src/index.ts',
     snapshot: 'examples/progressive/checkpoints/01-plugin.ts',
-    focus: [10, 12],
+    focus: [1, 2],
   },
   {
     id: '02-config',
@@ -44,7 +44,7 @@ const checkpointDefinitions = [
     heading: '第二步：同时定义类型和运行时 schema',
     file: 'src/index.ts',
     snapshot: 'examples/progressive/checkpoints/02-config.ts',
-    focus: [14, 23],
+    focus: [6, 14],
   },
   {
     id: '03-tool',
@@ -52,7 +52,7 @@ const checkpointDefinitions = [
     heading: '第三步：注册工具',
     file: 'src/index.ts',
     snapshot: 'examples/progressive/checkpoints/03-tool.ts',
-    focus: [27, 30],
+    focus: [22, 27],
   },
 ]
 
@@ -226,6 +226,7 @@ function tutorialLayout() {
 <html lang="zh-CN">
 <head>
   ${pageHead('从一个最小 Consumer 开始')}
+  <script>try{const theme=localStorage.getItem('reader-theme');if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme}catch{}</script>
   <style>
     :root {
       color-scheme:light;
@@ -238,8 +239,9 @@ function tutorialLayout() {
       --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
       --mono:"SFMono-Regular","Cascadia Code","Roboto Mono",Menlo,monospace;
     }
+    :root[data-theme="dark"] { color-scheme:dark; --paper:#191918; --paper-deep:#22211f; --panel:#1e1e1c; --active:#28241f; --ink:#ebe8e1; --ink-soft:#bbb6ac; --muted:#9b958b; --line:#35332f; --line-strong:#504c45; --accent:#d0a181; --new-code:#382e23; --code-ink:#d9d5cc; --line-number:#777269; --syntax-keyword:#d6a38b; --syntax-string:#9fbea7; --syntax-type:#b4a0bd; --syntax-number:#c5a77d; --syntax-comment:#938f87; --backdrop:rgba(0,0,0,.66); --header-bg:rgba(25,25,24,.94); }
     @media (prefers-color-scheme:dark) {
-      :root { color-scheme:dark; --paper:#191918; --paper-deep:#22211f; --panel:#1e1e1c; --active:#28241f; --ink:#ebe8e1; --ink-soft:#bbb6ac; --muted:#9b958b; --line:#35332f; --line-strong:#504c45; --accent:#d0a181; --new-code:#382e23; --code-ink:#d9d5cc; --line-number:#777269; --syntax-keyword:#d6a38b; --syntax-string:#9fbea7; --syntax-type:#b4a0bd; --syntax-number:#c5a77d; --syntax-comment:#938f87; --backdrop:rgba(0,0,0,.66); --header-bg:rgba(25,25,24,.94); }
+      :root:not([data-theme="light"]) { color-scheme:dark; --paper:#191918; --paper-deep:#22211f; --panel:#1e1e1c; --active:#28241f; --ink:#ebe8e1; --ink-soft:#bbb6ac; --muted:#9b958b; --line:#35332f; --line-strong:#504c45; --accent:#d0a181; --new-code:#382e23; --code-ink:#d9d5cc; --line-number:#777269; --syntax-keyword:#d6a38b; --syntax-string:#9fbea7; --syntax-type:#b4a0bd; --syntax-number:#c5a77d; --syntax-comment:#938f87; --backdrop:rgba(0,0,0,.66); --header-bg:rgba(25,25,24,.94); }
     }
     * { box-sizing:border-box; }
     html { min-width:320px; overflow-x:clip; overscroll-behavior:none; background:var(--paper); color:var(--ink); scroll-behavior:auto; }
@@ -258,7 +260,12 @@ function tutorialLayout() {
     .chapter-nav a::after { content:""; position:absolute; right:16px; bottom:-1px; left:16px; height:1px; background:var(--ink); transform:scaleX(0); transition:transform 220ms cubic-bezier(.16,1,.3,1); }
     .chapter-nav a:hover,.chapter-nav a[aria-current="page"] { color:var(--ink); }
     .chapter-nav a[aria-current="page"]::after { transform:scaleX(1); }
-    .github-link { justify-self:end; color:var(--muted); font:var(--small) var(--mono); text-decoration:none; }
+    .header-actions { justify-self:end; display:flex; align-items:center; gap:4px; }
+    .github-link { min-height:34px; display:inline-flex; align-items:center; padding:0 8px; color:var(--muted); font:var(--small) var(--mono); text-decoration:none; }
+    .header-action { width:34px; height:34px; display:grid; place-items:center; padding:0; border:0; background:transparent; color:var(--muted); cursor:pointer; }
+    .header-action:hover,.github-link:hover,.header-action[aria-expanded="true"] { background:var(--paper-deep); color:var(--ink); }
+    .header-action svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; stroke-width:1.6; }
+    .mobile-nav-toggle { display:none; }
     .reading-progress { position:fixed; z-index:60; top:calc(var(--header-height) - 1px); right:0; left:0; height:1px; pointer-events:none; }
     .reading-progress span { display:block; width:0; height:100%; background:var(--accent); transition:width 90ms linear; }
     .reader-shell { min-height:100vh; padding-top:var(--header-height); }
@@ -331,15 +338,23 @@ function tutorialLayout() {
       .panel-column { position:fixed; z-index:82; right:12px; bottom:12px; left:12px; height:min(80vh,760px); padding:0; opacity:0; pointer-events:none; transform:translateY(calc(100% + 24px)); transition:transform 320ms cubic-bezier(.16,1,.3,1),opacity 180ms ease; }
       .panel-column.is-mobile-open { opacity:1; pointer-events:auto; transform:translateY(0); }
       .code-panel { position:relative; top:auto; height:100%; min-height:0; }
-      .drawer-close { position:absolute; z-index:5; top:8px; right:52px; width:36px; height:36px; display:grid; place-items:center; padding:0; border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; }
+      .editor-lock { display:none; }
+      .drawer-close { position:absolute; z-index:5; top:8px; right:8px; width:36px; height:36px; display:grid; place-items:center; padding:0; border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; }
       .drawer-backdrop { position:fixed; z-index:80; inset:0; display:block; border:0; background:var(--backdrop); cursor:pointer; }
       .drawer-backdrop[hidden] { display:none; }
       .mobile-panel-button { position:fixed; z-index:45; right:18px; bottom:18px; min-height:42px; display:inline-flex; align-items:center; gap:8px; padding:0 14px; border:1px solid var(--ink); background:var(--ink); color:var(--paper); font-size:var(--small); cursor:pointer; }
+      .mobile-panel-button svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; stroke-width:1.6; }
       .mobile-panel-button span { color:var(--line-strong); font:var(--small) var(--mono); }
     }
     @media (max-width:680px) {
       .site-header { grid-template-columns:1fr auto; padding:0 16px; }
-      .chapter-nav { display:none; }
+      .brand strong { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .mobile-nav-toggle { display:grid; }
+      .chapter-nav { position:fixed; z-index:70; top:var(--header-height); right:0; left:0; display:flex; visibility:hidden; flex-direction:column; align-items:stretch; padding:8px 16px 12px; border-bottom:1px solid var(--line-strong); background:var(--paper); box-shadow:0 18px 34px rgba(0,0,0,.24); pointer-events:none; transform:translateY(-110%); transition:transform 240ms cubic-bezier(.16,1,.3,1),visibility 0s linear 240ms; }
+      .chapter-nav.is-open { visibility:visible; pointer-events:auto; transform:none; transition-delay:0s; }
+      .chapter-nav a { min-height:46px; display:flex; justify-content:flex-start; padding:0 12px; border-bottom:1px solid var(--line); }
+      .chapter-nav a:last-child { border-bottom:0; }
+      .chapter-nav a::after { right:auto; left:12px; width:32px; }
       .reader-grid { padding:0 18px 72px; }
       .lesson-intro { padding-top:38px; }
       .article-body pre { margin-right:-18px; margin-left:-18px; border-right:0; border-left:0; }
@@ -347,7 +362,6 @@ function tutorialLayout() {
       .file-tree { display:flex; align-items:center; gap:4px; overflow-x:auto; overflow-y:hidden; padding:8px; border-right:0; border-bottom:1px solid var(--line); }
       .tree-root { flex:0 0 auto; }
       .file-tree button { width:auto; min-width:max-content; grid-template-columns:15px auto 12px; padding:0 8px; }
-      .drawer-close { right:48px; }
     }
     @media (prefers-reduced-motion:reduce) {
       html,.code-scroll { scroll-behavior:auto; }
@@ -358,12 +372,20 @@ function tutorialLayout() {
 <body>
   <header class="site-header">
     <a class="brand" href="/"><span class="brand-mark">D</span><strong>Harness Plugin from Scratch</strong></a>
-    <nav class="chapter-nav" aria-label="教程章节">
+    <nav class="chapter-nav" id="chapter-nav" aria-label="教程章节">
       <a href="/" aria-current="page">最小插件</a>
       <a href="/docs/00-architecture-map.md">架构地图</a>
       <a href="/docs/05-testing-and-release.md">测试与发布</a>
     </nav>
-    <a class="github-link" href="https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch">GitHub ↗</a>
+    <div class="header-actions">
+      <a class="github-link" href="https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch">GitHub ↗</a>
+      <button class="header-action" id="theme-toggle" type="button" aria-label="切换浅色或深色模式" title="切换主题">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="header-action mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-label="打开章节导航" aria-controls="chapter-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+      </button>
+    </div>
   </header>
   <div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
   <main class="reader-shell">
@@ -397,7 +419,7 @@ function tutorialLayout() {
     </section>
     <button class="drawer-backdrop" id="drawer-backdrop" type="button" aria-label="关闭代码面板" hidden></button>
     <button class="mobile-panel-button" id="mobile-panel-button" type="button" aria-expanded="false">
-      <span aria-hidden="true">{ }</span> 查看代码 <span id="mobile-completion">0%</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 8-4 4 4 4m6-8 4 4-4 4"/></svg> 查看代码 <span id="mobile-completion">0%</span>
     </button>
   </main>
   <script>
@@ -422,6 +444,9 @@ function tutorialLayout() {
     const drawerCloseButton = document.querySelector('#drawer-close')
     const drawerBackdrop = document.querySelector('#drawer-backdrop')
     const mobileCompletion = document.querySelector('#mobile-completion')
+    const themeButton = document.querySelector('#theme-toggle')
+    const mobileNavButton = document.querySelector('#mobile-nav-toggle')
+    const chapterNav = document.querySelector('#chapter-nav')
     const state = {
       activeIndex: -1,
       repo: {},
@@ -434,7 +459,37 @@ function tutorialLayout() {
       scrollPositions: new Map(),
       suppressedAnimationPhases: new Set(),
       drawerOpen: false,
+      mobileNavOpen: false,
     }
+
+    function resolvedTheme() {
+      return document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')
+    }
+
+    function updateThemeButton() {
+      const next = resolvedTheme() === 'dark' ? '浅色' : '深色'
+      themeButton.setAttribute('aria-label', '切换到' + next + '模式')
+      themeButton.title = '切换到' + next + '模式'
+    }
+
+    themeButton.addEventListener('click', function () {
+      const next = resolvedTheme() === 'dark' ? 'light' : 'dark'
+      document.documentElement.dataset.theme = next
+      try { localStorage.setItem('reader-theme', next) } catch {}
+      updateThemeButton()
+    })
+
+    function setMobileNav(open) {
+      state.mobileNavOpen = open
+      chapterNav.classList.toggle('is-open', open)
+      mobileNavButton.setAttribute('aria-expanded', String(open))
+      mobileNavButton.setAttribute('aria-label', open ? '关闭章节导航' : '打开章节导航')
+    }
+
+    mobileNavButton.addEventListener('click', function () { setMobileNav(!state.mobileNavOpen) })
+    chapterNav.addEventListener('click', function (event) {
+      if (event.target.closest('a')) setMobileNav(false)
+    })
 
     function splitCode(value) {
       if (!value) return []
@@ -721,6 +776,10 @@ function tutorialLayout() {
       if (event.key === 'Escape' && state.drawerOpen) {
         event.preventDefault()
         closeDrawer(true)
+      } else if (event.key === 'Escape' && state.mobileNavOpen) {
+        event.preventDefault()
+        setMobileNav(false)
+        mobileNavButton.focus()
       }
     })
 
@@ -747,8 +806,10 @@ function tutorialLayout() {
       if (innerWidth > 1180) closeDrawer(false)
       if (innerWidth > 1180) panelColumn.removeAttribute('inert')
       else if (!state.drawerOpen) panelColumn.setAttribute('inert', '')
+      if (innerWidth > 680) setMobileNav(false)
     })
 
+    updateThemeButton()
     updateLockButton()
     renderPanel({ followCheckpoint: false })
     if (innerWidth <= 1180) panelColumn.setAttribute('inert', '')

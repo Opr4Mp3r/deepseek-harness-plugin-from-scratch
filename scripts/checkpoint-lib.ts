@@ -4,7 +4,6 @@ import { resolve } from 'node:path'
 export interface Checkpoint {
   id: string
   title: string
-  through: string | null
 }
 
 export interface Manifest {
@@ -25,10 +24,48 @@ export async function loadProgressive(root = process.cwd()): Promise<{
 }
 
 export function renderCheckpoint(source: string, checkpoint: Checkpoint): string {
-  if (checkpoint.through === null) return source
-  const offset = source.indexOf(checkpoint.through)
-  if (offset === -1) throw new Error(`missing marker ${JSON.stringify(checkpoint.through)}`)
-  return source.slice(0, offset).trimEnd() + '\n'
+  const target = checkpointNumber(checkpoint.id)
+  const rendered: string[] = []
+  let active: number | undefined
+  for (const line of source.split('\n')) {
+    const marker = /^\/\/ checkpoint:(\d{2}-[a-z0-9-]+)$/.exec(line)
+    if (marker !== null && marker[1] !== undefined) {
+      active = checkpointNumber(marker[1])
+      continue
+    }
+    if (active === undefined) {
+      if (line.trim().length > 0) throw new Error('canonical source must start with a checkpoint marker')
+      continue
+    }
+    if (active <= target) rendered.push(line)
+  }
+  return rendered.join('\n').trim() + '\n'
+}
+
+/** Return the canonical source without generator-only checkpoint markers. */
+export function renderCanonicalSource(source: string): string {
+  return source
+    .split('\n')
+    .filter(line => !/^\/\/ checkpoint:\d{2}-[a-z0-9-]+$/.test(line))
+    .join('\n')
+    .trim() + '\n'
+}
+
+/** Whether `current` only inserts lines into `previous`. */
+export function isInsertionOnly(previous: string, current: string): boolean {
+  const before = previous.trimEnd().split('\n')
+  const after = current.trimEnd().split('\n')
+  let cursor = 0
+  for (const line of after) {
+    if (line === before[cursor]) cursor += 1
+  }
+  return cursor === before.length
+}
+
+function checkpointNumber(id: string): number {
+  const match = /^(\d{2})-[a-z0-9-]+$/.exec(id)
+  if (match === null || match[1] === undefined) throw new Error(`invalid checkpoint id: ${id}`)
+  return Number(match[1])
 }
 
 export function renderAppendPatch(
@@ -37,20 +74,40 @@ export function renderAppendPatch(
   currentId: string,
   current: string,
 ): string {
-  if (!current.startsWith(previous)) {
-    throw new Error(`${currentId} rewrites ${previousId} instead of extending it`)
+  if (!isInsertionOnly(previous, current)) {
+    throw new Error(`${currentId} rewrites ${previousId} instead of inserting lines`)
   }
-  const addition = current.slice(previous.length).trimEnd()
-  const addedLines = addition.length === 0 ? [] : addition.split('\n')
-  const oldLineCount = previous.trimEnd().split('\n').length
+  const before = previous.trimEnd().split('\n')
+  const after = current.trimEnd().split('\n')
+  let cursor = 0
+  let additionStart = 0
+  let additions: string[] = []
+  const hunks: string[] = []
+  function flushAdditions(): void {
+    if (additions.length === 0) return
+    hunks.push(
+      `@@ -${cursor},0 +${additionStart + 1},${additions.length} @@`,
+      ...additions.map(line => `+${line}`),
+    )
+    additions = []
+  }
+  after.forEach((line, index) => {
+    if (line === before[cursor]) {
+      flushAdditions()
+      cursor += 1
+      return
+    }
+    if (additions.length === 0) additionStart = index
+    additions.push(line)
+  })
+  flushAdditions()
   const from = `examples/progressive/checkpoints/${previousId}.ts`
   const to = `examples/progressive/checkpoints/${currentId}.ts`
   return [
     `diff --git a/${from} b/${to}`,
     `--- a/${from}`,
     `+++ b/${to}`,
-    `@@ -${oldLineCount},0 +${oldLineCount + 1},${addedLines.length} @@`,
-    ...addedLines.map(line => `+${line}`),
+    ...hunks,
     '',
   ].join('\n')
 }

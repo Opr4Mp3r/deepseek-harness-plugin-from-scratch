@@ -1,7 +1,13 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { loadProgressive, renderAppendPatch, renderCheckpoint } from './checkpoint-lib.ts'
+import {
+  isInsertionOnly,
+  loadProgressive,
+  renderAppendPatch,
+  renderCanonicalSource,
+  renderCheckpoint,
+} from './checkpoint-lib.ts'
 
 const { manifest, source } = await loadProgressive()
 const seen = new Set<string>()
@@ -23,8 +29,8 @@ for (const checkpoint of manifest.checkpoints) {
   if (actual !== expected) {
     throw new Error(`${path} drifted; run pnpm generate:checkpoints`)
   }
-  if (!expected.startsWith(previous)) {
-    throw new Error(`${checkpoint.id} rewrites earlier code instead of extending it`)
+  if (previous.length > 0 && !isInsertionOnly(previous, expected)) {
+    throw new Error(`${checkpoint.id} rewrites earlier code instead of inserting lines`)
   }
   if (previousId !== undefined) {
     const name = `${previousId}-to-${checkpoint.id}.patch`
@@ -40,7 +46,9 @@ for (const checkpoint of manifest.checkpoints) {
   previousId = checkpoint.id
 }
 
-if (previous !== source) throw new Error('the final checkpoint must equal the canonical source')
+if (previous !== renderCanonicalSource(source)) {
+  throw new Error('the final checkpoint must equal the canonical source without generator markers')
+}
 
 async function verifyFileSet(directory: string, expected: string[]): Promise<void> {
   const actual = (await readdir(directory)).sort()
