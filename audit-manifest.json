@@ -1,0 +1,35 @@
+{
+  "upstream": {
+    "repository": "deepseek-ai/deepseek-harness",
+    "commit": "47f943859bef60e4160492346772ded9b24f765a",
+    "auditedAt": "2026-08-13"
+  },
+  "runtimeBaseline": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/cordis-plugin-include": "1.0.6",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.2",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-system-prompt": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "3.18.1",
+    "node": "22.21.1",
+    "pnpm": "11.7.0"
+  },
+  "reference": {
+    "repository": "SaladDay/pi-from-scratch",
+    "commit": "db85b87976812997398a757d9ff609a34ebd7de7"
+  },
+  "auditedSeams": [
+    "shell",
+    "web",
+    "skill",
+    "workflow",
+    "filesystem",
+    "tools",
+    "agent-loop"
+  ],
+  "exclusions": [
+    "vendored Cordis implementation",
+    "credential-gated real API execution"
+  ]
+}

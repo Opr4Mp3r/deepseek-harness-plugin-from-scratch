@@ -1,0 +1,24 @@
+name: Tutorial or example bug
+description: Report incorrect prose, drifted code, or a failing keyless example.
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is incorrect or failing?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Include the page, command, Node version, and exact error. Remove secrets.
+    validations:
+      required: true
+  - type: input
+    id: upstream
+    attributes:
+      label: Harness version
+      description: Commit or npm rc version, if relevant.

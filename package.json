@@ -1,0 +1,36 @@
+{
+  "name": "deepseek-harness-plugin-from-scratch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A code-audited, progressive guide to building production-grade DeepSeek Harness plugins.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "check": "pnpm run build && pnpm test && pnpm run check:checkpoints && pnpm run check:docs",
+    "check:checkpoints": "tsx scripts/verify-checkpoints.ts",
+    "check:docs": "tsx scripts/verify-docs.ts",
+    "generate:checkpoints": "tsx scripts/generate-checkpoints.ts",
+    "smoke:loader": "node --import tsx examples/progressive/tests/loader-runner.ts examples/progressive/cordis.yml",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/cordis-plugin-include": "1.0.6",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.2",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-system-prompt": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "3.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.0",
+    "tsx": "4.22.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

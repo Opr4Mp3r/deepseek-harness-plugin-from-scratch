@@ -1,0 +1,17 @@
+diff --git a/examples/progressive/checkpoints/01-plugin.ts b/examples/progressive/checkpoints/02-config.ts
+--- a/examples/progressive/checkpoints/01-plugin.ts
++++ b/examples/progressive/checkpoints/02-config.ts
+@@ -12,0 +13,13 @@
++
++// checkpoint:config
++export interface Config {
++  greeting?: string
++  excited?: boolean
++}
++
++export const Config: z<Config> = z.object({
++  greeting: z.string().default('Hello'),
++  excited: z.boolean().default(false),
++})
++
++type ResolvedConfig = Required<Config>

@@ -1,0 +1,6 @@
+- name: '@deepseek-ai/dsh-system-prompt'
+- name: '@deepseek-ai/dsh-tools'
+- name: './tests/fixtures/default-export.ts'
+  config:
+    greeting: 'Welcome'
+    excited: true

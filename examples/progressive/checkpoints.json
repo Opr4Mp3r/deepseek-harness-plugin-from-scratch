@@ -1,0 +1,20 @@
+{
+  "source": "src/index.ts",
+  "checkpoints": [
+    {
+      "id": "01-plugin",
+      "title": "声明插件和依赖",
+      "through": "// checkpoint:config"
+    },
+    {
+      "id": "02-config",
+      "title": "加入运行时配置",
+      "through": "// checkpoint:tool"
+    },
+    {
+      "id": "03-tool",
+      "title": "注册完整工具",
+      "through": null
+    }
+  ]
+}
