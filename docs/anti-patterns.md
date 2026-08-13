@@ -1,4 +1,4 @@
-# 反模式：16 个看似合理、实际会坏的写法
+# 反模式：17 个看似合理、实际会坏的写法
 
 1. **函数插件同时 `export default apply`**：Loader 可能丢掉 namespace 中的 `inject`、`Config` 和 `name`。
 2. **可选 service 用 `ctx.optionalService`**：shadow/fiber 拓扑下兄弟 provider 不可见；用 `ctx.get()`。
@@ -16,5 +16,6 @@
 14. **presenter 读时钟、网络或实时 Session**：live 与 replay 渲染不一致。
 15. **忽略 `exec.signal` 或 dispose 不等 quiescence**：取消后旧工作继续改变世界。
 16. **只有手工挂载单测**：无法证明 Loader、真实 fiber topology、发布 artifact 和产品 composition 可用。
+17. **把“源码能跑”当成“插件可安装”**：没有 `lib/`、包入口、`dsh.bundle` 或 `cordis.patch.yml` 时，`dsh plugin add` 只会安装普通依赖，无法激活插件。
 
 每条反模式及其生产代码证据见[审计报告](audit-report.md)。

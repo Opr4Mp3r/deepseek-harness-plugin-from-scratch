@@ -9,11 +9,12 @@ interface RunResult {
   stderr: string
 }
 
-const runner = fileURLToPath(new URL('./loader-runner.ts', import.meta.url))
+const runner = fileURLToPath(new URL('./loader-runner.mjs', import.meta.url))
 
-function runComposition(config: string): Promise<RunResult> {
+function runComposition(config: string, sourceTypescript = true): Promise<RunResult> {
   return new Promise((resolveRun, reject) => {
-    const child = spawn(process.execPath, ['--import', 'tsx', runner, resolve(config)], {
+    const sourceArgs = sourceTypescript ? ['--import', 'tsx'] : []
+    const child = spawn(process.execPath, [...sourceArgs, runner, resolve(config)], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -43,6 +44,17 @@ describe('real Loader composition in a child process', () => {
         isError: false,
         value: { message: 'Welcome, Ada!' },
       },
+    })
+  })
+
+  it('loads the emitted ESM entrypoint under plain Node.js', async () => {
+    const run = await runComposition('examples/progressive/cordis.built.yml', false)
+    expect(run.code, run.stderr).toBe(0)
+    const line = run.stdout.split('\n').find(value => value.startsWith('DSH_TUTORIAL_RESULT '))
+    expect(line).toBeDefined()
+    expect(JSON.parse(line!.slice('DSH_TUTORIAL_RESULT '.length))).toMatchObject({
+      tools: ['greet'],
+      result: { value: { message: 'Welcome, Ada!' } },
     })
   })
 

@@ -15,6 +15,15 @@
     "node": "22.21.1",
     "pnpm": "11.7.0"
   },
+  "profileBaseline": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6"
+  },
+  "packageCompatibility": {
+    "peerDependencies": {
+      "@deepseek-ai/cordis": "^4.0.1",
+      "@deepseek-ai/dsh-tools": "^0.1.0-rc.5"
+    }
+  },
   "reference": {
     "repository": "SaladDay/pi-from-scratch",
     "commit": "db85b87976812997398a757d9ff609a34ebd7de7"

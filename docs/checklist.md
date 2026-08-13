@@ -58,3 +58,15 @@
 - [ ] package 有 `src/invariant.ts`。
 - [ ] README/JSDoc 记录 config、failure、ownership、timing、cancellation、Model Experience 和 limitation。
 - [ ] 非平凡上游变更附 Agent Note，并同步相关双语文档。
+
+## 构建、打包与安装
+
+- [ ] `main`、`types`、`exports` 全部指向已生成且已打包的文件。
+- [ ] `files` 不包含源码 fixture、测试、私有配置或凭据。
+- [ ] 可启用的组合包声明 `dsh.bundle.patch`，且 patch 文件进入 tarball。
+- [ ] patch 行用发布包名加载入口，不引用 checkout 内的相对源码路径。
+- [ ] Harness 服务包是 peer dependencies；插件拥有的运行时实现是 dependencies。
+- [ ] tarball 在一个没有源码 checkout 的临时 consumer 中安装并由 plain Node.js 加载。
+- [ ] `dsh plugin add` 后包名进入 profile bundle 列表，`--dump-config` 出现预期行。
+- [ ] profile 真实启动并执行一个插件行为；只检查 manifest 或 config dump 不替代执行。
+- [ ] GitHub 源码安装需要构建时提供自包含 `prepare`，并明确提示构建授权风险。

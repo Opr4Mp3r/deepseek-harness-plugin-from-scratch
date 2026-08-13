@@ -9,6 +9,7 @@
 ## Validation
 
 - [ ] `pnpm check`
+- [ ] `pnpm check:profile` when package, dependency, or composition files changed
 - [ ] `git diff --check`
 - [ ] Checkpoints regenerated when canonical example changed
 - [ ] Audit baseline/permalinks updated when upstream version changed

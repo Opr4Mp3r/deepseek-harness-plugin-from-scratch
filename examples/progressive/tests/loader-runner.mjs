@@ -4,15 +4,23 @@ import { Context } from '@deepseek-ai/cordis'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import { CallId } from '@deepseek-ai/dsh-llm'
+import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const configPath = resolve(process.argv[2] ?? 'examples/progressive/cordis.yml')
+const configRequire = createRequire(configPath)
 const ctx = new Context()
 
 try {
   ctx.baseUrl = pathToFileURL(dirname(configPath)).href + '/'
   await ctx.plugin(Loader)
+  ctx.loader.internal = {
+    version: 'v2',
+    async import(specifier) {
+      return import(pathToFileURL(configRequire.resolve(specifier)).href)
+    },
+  }
   ctx.loader.builtins.include = Include
   await ctx.loader.create({
     name: 'cordis:include',

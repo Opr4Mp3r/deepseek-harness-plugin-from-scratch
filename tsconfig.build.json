@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false,
+    "declaration": true,
+    "declarationMap": false,
+    "noEmit": false,
+    "outDir": "./lib",
+    "rootDir": "./examples/progressive/src",
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": [
+    "examples/progressive/src/index.ts"
+  ]
+}

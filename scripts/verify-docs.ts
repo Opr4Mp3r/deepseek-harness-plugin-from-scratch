@@ -35,6 +35,8 @@ for (const path of required) {
 const manifest = JSON.parse(await readFile('audit-manifest.json', 'utf8')) as {
   upstream?: { repository?: string; commit?: string }
   runtimeBaseline?: Record<string, string>
+  profileBaseline?: Record<string, string>
+  packageCompatibility?: { peerDependencies?: Record<string, string> }
   reference?: { repository?: string; commit?: string }
 }
 const commit = manifest.upstream?.commit
@@ -63,19 +65,32 @@ for (const path of ['README.md', 'docs/audit-report.md']) {
 
 const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
   dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
   packageManager?: string
 }
 const dependencies = packageJson.dependencies ?? {}
-for (const [name, version] of Object.entries(dependencies)) {
-  if (baseline[name] !== version) {
-    throw new Error(`runtimeBaseline.${name} must equal package.json dependency ${version}`)
-  }
-}
+const devDependencies = packageJson.devDependencies ?? {}
+const pinnedPackages = { ...dependencies, ...devDependencies }
 const baselinePackages = Object.keys(baseline).filter(name => name.startsWith('@'))
 for (const name of baselinePackages) {
-  if (dependencies[name] !== baseline[name]) {
-    throw new Error(`package.json dependency ${name} must equal runtimeBaseline ${baseline[name]}`)
+  if (pinnedPackages[name] !== baseline[name]) {
+    throw new Error(`package.json dependency or devDependency ${name} must equal runtimeBaseline ${baseline[name]}`)
   }
+}
+for (const [name, version] of Object.entries(pinnedPackages)) {
+  if (name.startsWith('@deepseek-ai/') && baseline[name] !== version) {
+    throw new Error(`runtimeBaseline.${name} must equal package.json pinned version ${version}`)
+  }
+}
+const expectedPeers = manifest.packageCompatibility?.peerDependencies
+if (expectedPeers === undefined) throw new Error('audit-manifest.json needs packageCompatibility.peerDependencies')
+if (JSON.stringify(packageJson.peerDependencies ?? {}) !== JSON.stringify(expectedPeers)) {
+  throw new Error('package.json peerDependencies must equal the audited compatibility window')
+}
+const profileBaseline = manifest.profileBaseline
+if (profileBaseline?.['@deepseek-ai/dsh'] === undefined) {
+  throw new Error('audit-manifest.json needs a fixed profile CLI baseline')
 }
 if (packageJson.packageManager !== `pnpm@${baseline.pnpm}`) {
   throw new Error('packageManager must equal the audited pnpm baseline')
@@ -85,15 +100,28 @@ if ((await readFile('.nvmrc', 'utf8')).trim() !== baseline.node) {
 }
 
 const lockfile = await readFile('pnpm-lock.yaml', 'utf8')
-for (const [name, version] of Object.entries(dependencies)) {
+for (const [name, version] of Object.entries(pinnedPackages)) {
+  if (name === '@types/node' || !name.startsWith('@deepseek-ai/')) continue
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const entry = new RegExp(`^[ ]{6}['\"]?${escaped}['\"]?:\\n[ ]{8}specifier: ${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm')
   if (!entry.test(lockfile)) throw new Error(`pnpm-lock.yaml does not pin ${name}@${version}`)
 }
 
 const readme = await readFile('README.md', 'utf8')
-for (const version of new Set(Object.values(baseline))) {
+for (const version of new Set([
+  ...Object.values(baseline),
+  ...Object.values(profileBaseline),
+  ...Object.values(expectedPeers),
+])) {
   if (!readme.includes(version)) throw new Error(`README.md does not cite runtime baseline ${version}`)
+}
+
+const preview = await readFile('preview/server.mjs', 'utf8')
+if (/\/(?:Users|private\/tmp)\//.test(preview)) {
+  throw new Error('preview/server.mjs must not contain machine-local absolute paths')
+}
+if (!preview.includes("from 'marked'")) {
+  throw new Error('preview/server.mjs must resolve its renderer from package dependencies')
 }
 
 const referenceCommit = manifest.reference?.commit

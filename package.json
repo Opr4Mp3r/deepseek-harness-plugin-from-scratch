@@ -1,34 +1,85 @@
 {
   "name": "deepseek-harness-plugin-from-scratch",
   "version": "0.1.0",
-  "private": true,
   "description": "A code-audited, progressive guide to building production-grade DeepSeek Harness plugins.",
+  "keywords": [
+    "deepseek",
+    "harness",
+    "cordis",
+    "plugin",
+    "tutorial"
+  ],
   "license": "MIT",
   "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/index.d.ts",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch.git"
+  },
+  "homepage": "https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch#readme",
+  "bugs": {
+    "url": "https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "packageManager": "pnpm@11.7.0",
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
-    "check": "pnpm run build && pnpm test && pnpm run check:checkpoints && pnpm run check:docs",
+    "build": "pnpm run typecheck && pnpm run build:package",
+    "build:package": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "pnpm run typecheck && pnpm test && pnpm run check:checkpoints && pnpm run check:docs && pnpm run check:preview && pnpm run check:package",
     "check:checkpoints": "tsx scripts/verify-checkpoints.ts",
     "check:docs": "tsx scripts/verify-docs.ts",
+    "check:package": "tsx scripts/verify-package.ts",
+    "check:preview": "node scripts/verify-preview.mjs",
+    "check:profile": "node scripts/verify-profile.mjs",
     "generate:checkpoints": "tsx scripts/generate-checkpoints.ts",
-    "smoke:loader": "node --import tsx examples/progressive/tests/loader-runner.ts examples/progressive/cordis.yml",
-    "test": "vitest run"
+    "preview": "node preview/server.mjs . 4175",
+    "prepare": "tsc -p tsconfig.build.json",
+    "smoke:loader": "pnpm run build:package && node examples/progressive/tests/loader-runner.mjs examples/progressive/cordis.built.yml",
+    "smoke:source": "node --import tsx examples/progressive/tests/loader-runner.mjs examples/progressive/cordis.yml",
+    "test": "pnpm run build:package && vitest run"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.1"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.5"
+  },
+  "devDependencies": {
     "@deepseek-ai/cordis": "4.0.1",
     "@deepseek-ai/cordis-plugin-include": "1.0.6",
     "@deepseek-ai/cordis-plugin-loader": "1.0.2",
     "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
     "@deepseek-ai/dsh-system-prompt": "0.1.0-rc.6",
     "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "3.18.1"
-  },
-  "devDependencies": {
     "@types/node": "22.20.0",
+    "marked": "16.4.2",
     "tsx": "4.22.4",
     "typescript": "6.0.3",
     "vitest": "4.1.10"

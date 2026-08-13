@@ -1,4 +1,6 @@
 node_modules/
+lib/
+*.tgz
 coverage/
 *.log
 .DS_Store

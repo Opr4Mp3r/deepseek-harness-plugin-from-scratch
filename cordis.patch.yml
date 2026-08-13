@@ -1,0 +1,6 @@
+- insert:
+    - id: greet-tool
+      name: deepseek-harness-plugin-from-scratch
+      config:
+        greeting: Hello
+        excited: false
