@@ -1,0 +1,22 @@
+diff --git a/examples/capability/checkpoints/01-stable-values/src/definition.ts b/examples/capability/checkpoints/02-service-key/src/definition.ts
+--- a/examples/capability/checkpoints/01-stable-values/src/definition.ts
++++ b/examples/capability/checkpoints/02-service-key/src/definition.ts
+@@ -0,0 +1,2 @@
++import { Service, type Context } from '@deepseek-ai/cordis'
++
+@@ -14,0 +17,15 @@
++
++declare module '@deepseek-ai/cordis' {
++  interface Context {
++    summarizer: Summarizer
++  }
++}
++
++export abstract class Summarizer extends Service {
++  constructor(ctx: Context) {
++    super(ctx, 'summarizer')
++  }
++
++}
++
++export default Summarizer

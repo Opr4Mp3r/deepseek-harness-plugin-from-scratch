@@ -1,0 +1,31 @@
+{
+  "id": "04-events-and-durability",
+  "title": "04 · 事件与持久化",
+  "tutorial": "docs/04-events-and-durability.md",
+  "sources": [
+    { "source": "src/observe.ts", "file": "src/observe.ts", "language": "ts" },
+    { "source": "src/context.ts", "file": "src/context.ts", "language": "ts" },
+    { "source": "src/contracts.ts", "file": "src/contracts.ts", "language": "ts" },
+    { "source": "src/tool.ts", "file": "src/tool.ts", "language": "ts" },
+    { "source": "src/index.ts", "file": "src/index.ts", "language": "ts" },
+    { "source": "tests/unit.spec.ts", "file": "tests/unit.spec.ts", "language": "ts" },
+    { "source": "tests/scripted-adapter.ts", "file": "tests/scripted-adapter.ts", "language": "ts" },
+    { "source": "tests/harness.ts", "file": "tests/harness.ts", "language": "ts" },
+    { "source": "tests/log-order.spec.ts", "file": "tests/log-order.spec.ts", "language": "ts" },
+    { "source": "tests/request-reconstruction.spec.ts", "file": "tests/request-reconstruction.spec.ts", "language": "ts" },
+    { "source": "tests/replay.spec.ts", "file": "tests/replay.spec.ts", "language": "ts" }
+  ],
+  "checkpoints": [
+    { "id": "01-live-waterfall", "title": "用 waterfall 观察一次工具执行", "file": "src/observe.ts", "focus": [1, 14] },
+    { "id": "02-plugin-context", "title": "构造带来源的插件上下文", "file": "src/context.ts", "focus": [1, 11] },
+    { "id": "03-tool-contracts", "title": "声明工具输入和规范结果", "file": "src/contracts.ts", "focus": [1, 17] },
+    { "id": "04-defer-context", "title": "把上下文附着到工具结果", "file": "src/tool.ts", "focus": [1, 25] },
+    { "id": "05-plugin-assembly", "title": "注册观察器和工具", "file": "src/index.ts", "focus": [1, 12] },
+    { "id": "06-execution-unit", "title": "先证明执行结果携带上下文", "file": "tests/unit.spec.ts", "focus": [1, 32] },
+    { "id": "07-scripted-model", "title": "准备不需要密钥的两步模型", "file": "tests/scripted-adapter.ts", "focus": [1, 47] },
+    { "id": "08-real-agent-loop", "title": "装配真实 AgentLoop", "file": "tests/harness.ts", "focus": [1, 43] },
+    { "id": "09-durable-order", "title": "证明上下文进入 durable log", "file": "tests/log-order.spec.ts", "focus": [1, 23] },
+    { "id": "10-request-reconstruction", "title": "从日志前缀重建模型请求", "file": "tests/request-reconstruction.spec.ts", "focus": [1, 33] },
+    { "id": "11-json-replay", "title": "跨 JSON 存储边界重放历史", "file": "tests/replay.spec.ts", "focus": [1, 22] }
+  ]
+}

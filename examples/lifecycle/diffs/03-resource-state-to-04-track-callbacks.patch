@@ -1,0 +1,14 @@
+diff --git a/examples/lifecycle/checkpoints/03-resource-state/src/source.ts b/examples/lifecycle/checkpoints/04-track-callbacks/src/source.ts
+--- a/examples/lifecycle/checkpoints/03-resource-state/src/source.ts
++++ b/examples/lifecycle/checkpoints/04-track-callbacks/src/source.ts
+@@ -31,0 +32,10 @@
++  start(handler: (sequence: number) => Promise<void>): void {
++    this.#timer = setInterval(() => {
++      const task = handler(++this.#sequence).catch((error: unknown) => {
++        console.error('pulse-source: tick listener failed', error)
++      })
++      this.#inFlight.add(task)
++      void task.then(() => this.#inFlight.delete(task))
++    }, this.intervalMs)
++  }
++

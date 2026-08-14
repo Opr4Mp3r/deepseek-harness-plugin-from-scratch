@@ -1,0 +1,23 @@
+diff --git a/examples/capability/checkpoints/06-run-provider/src/provider.ts b/examples/capability/checkpoints/07-concrete-provider/src/provider.ts
+--- a/examples/capability/checkpoints/06-run-provider/src/provider.ts
++++ b/examples/capability/checkpoints/07-concrete-provider/src/provider.ts
+@@ -61,0 +62,19 @@
++
++export default class LocalSummarizer extends Summarizer {
++  static Config = Config
++
++  private readonly config: ResolvedConfig
++
++  constructor(ctx: Context, config: Config) {
++    super(ctx)
++    this.config = resolveConfig(config)
++  }
++
++  resolve(request: SummaryRequest): SummarySpec {
++    return resolveRequest(this.config, request)
++  }
++
++  summarize(spec: SummarySpec, signal?: AbortSignal): Promise<SummaryResult> {
++    return summarizeLocally(spec, signal)
++  }
++}

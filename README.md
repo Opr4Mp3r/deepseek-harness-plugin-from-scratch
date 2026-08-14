@@ -49,7 +49,7 @@ pnpm check
 pnpm preview
 ```
 
-打开 `http://127.0.0.1:4175`。正文越过十个 checkpoint 时，右侧 `src/index.ts` 会从空文件逐步增长到完整插件；每个 checkpoint 都位于对应解释和代码片段之后，只显示刚刚讲过的新增行。阅读器只投影仓库中的 Markdown、checkpoint manifest 和自动生成快照，不维护第二份教程源码，也不部署网站。
+打开 `http://127.0.0.1:4175`。01–05 五章都是独立的互动教程：切换章节后，右侧会换成本章自己的多文件仓库，并随正文依次加入生命周期资源、Definition / Provider / Consumer、Session 重放测试或发布验收代码。51 个 checkpoint 都位于对应解释和代码片段之后，只高亮刚刚讲过的新增行。阅读器直接投影 Markdown、manifest 和 canonical source，不维护第二份教程源码，也不需要部署网站。
 
 ## 安装进 Harness profile
 
@@ -88,22 +88,19 @@ dsh plugin --profile tutorial add 'github:Opr4Mp3r/deepseek-harness-plugin-from-
 
 ## 像读文章一样看代码
 
-`examples/progressive/src/index.ts` 是唯一手工维护的最终源码。十份 checkpoint 由它生成，CI 验证每一步只能插入新行，manifest、源码 marker 与教程 marker 必须一一对应，最终一步必须与源码逐字相同。所有快照都进入同一个严格 TypeScript program，因此中间步骤也必须能够类型检查。
+每章各自维护 canonical source；`examples/tutorials.json` 只规定章节顺序，各章 `checkpoints.json` 把正文 marker 映射到一个真实文件。生成器据此产出完整仓库快照和 unified patch，CI 验证 manifest、源码 marker、正文片段与阅读触发点逐字一致；每一步只能向一个文件插入已解释的行，最后一步必须等于本章全部 canonical source。
 
-| 进度 | 本步目标 | 阅读代码 | 与上一步比较 | 运行证据 |
-|---|---|---|---|---|
-| 1/10 | 插件身份与必需依赖 | [`01-identity.ts`](examples/progressive/checkpoints/01-identity.ts) | — | `pnpm typecheck` |
-| 2/10 | 部署者的配置类型 | [`02-config-type.ts`](examples/progressive/checkpoints/02-config-type.ts) | [`01 → 02`](examples/progressive/diffs/01-identity-to-02-config-type.patch) | `pnpm typecheck` |
-| 3/10 | Loader 运行时 schema | [`03-config-schema.ts`](examples/progressive/checkpoints/03-config-schema.ts) | [`02 → 03`](examples/progressive/diffs/02-config-type-to-03-config-schema.patch) | `pnpm typecheck` |
-| 4/10 | 已解析的运行时配置 | [`04-resolved-config.ts`](examples/progressive/checkpoints/04-resolved-config.ts) | [`03 → 04`](examples/progressive/diffs/03-config-schema-to-04-resolved-config.patch) | `pnpm typecheck` |
-| 5/10 | 模型输入协议 | [`05-model-input.ts`](examples/progressive/checkpoints/05-model-input.ts) | [`04 → 05`](examples/progressive/diffs/04-resolved-config-to-05-model-input.patch) | `pnpm typecheck` |
-| 6/10 | canonical output | [`06-canonical-output.ts`](examples/progressive/checkpoints/06-canonical-output.ts) | [`05 → 06`](examples/progressive/diffs/05-model-input-to-06-canonical-output.patch) | `pnpm typecheck` |
-| 7/10 | 模型文本渲染 | [`07-model-render.ts`](examples/progressive/checkpoints/07-model-render.ts) | [`06 → 07`](examples/progressive/diffs/06-canonical-output-to-07-model-render.patch) | `pnpm typecheck` |
-| 8/10 | 执行与值约束 | [`08-execution.ts`](examples/progressive/checkpoints/08-execution.ts) | [`07 → 08`](examples/progressive/diffs/07-model-render-to-08-execution.patch) | `pnpm typecheck` |
-| 9/10 | UI render intent | [`09-presentation.ts`](examples/progressive/checkpoints/09-presentation.ts) | [`08 → 09`](examples/progressive/diffs/08-execution-to-09-presentation.patch) | `pnpm typecheck` |
-| 10/10 | 注册完整插件 | [`10-assembly.ts`](examples/progressive/checkpoints/10-assembly.ts) | [`09 → 10`](examples/progressive/diffs/09-presentation-to-10-assembly.patch) | `pnpm test` |
+| 章节 | checkpoint | 右侧仓库最终包含 | GitHub 阅读终点 | 运行证据 |
+|---|---:|---|---|---|
+| 01 最小插件 | 10 | 配置、schema、工具输入/输出、执行与 UI intent | [`10-assembly.ts`](examples/progressive/checkpoints/10-assembly.ts) | `pnpm smoke:source` |
+| 02 生命周期 | 9 | awaited event、timer、在途任务、异步 disposer、卸载测试 | [`09-await-quiescence/`](examples/lifecycle/checkpoints/09-await-quiescence/) | `pnpm test` |
+| 03 能力三角色 | 12 | Definition、可替换 Provider、Consumer 与 swap 测试 | [`12-swap-provider/`](examples/capability/checkpoints/12-swap-provider/) | `pnpm test` |
+| 04 事件与持久化 | 11 | waterfall、deferred context、AgentLoop、日志重建与 JSON replay | [`11-json-replay/`](examples/events/checkpoints/11-json-replay/) | `pnpm test` |
+| 05 测试与发布 | 9 | unit、fiber、Loader、built entry、tarball consumer、profile activation | [`09-profile-activation/`](examples/testing/checkpoints/09-profile-activation/) | `pnpm check` / `pnpm check:profile` |
 
-diff 也是由同一个生成器产生的 unified patch，因此读者在 GitHub 内就能看到本步新增代码。想修改教程时，同步更新 `src/index.ts`、`checkpoints.json` 和正文中的对应解释与 marker，然后运行：
+提交的 TypeScript canonical examples 进入同一个 strict program；unit 与 lifecycle 由 Vitest 执行，Loader、built entry、tarball consumer 和 profile 则由表中对应的真实命令验收。中间仓库快照是教学投影：它们保证来源明确、顺序只增和最终逐字一致，不假装每一个尚未讲完的阶段都是独立发布包。
+
+diff 同样由生成器产生，因此 GitHub 中也能查看每一步。修改任一教程时，同步更新本章 canonical source、`checkpoints.json` 和正文中的解释、代码片段与 marker，然后运行：
 
 ```sh
 pnpm generate:checkpoints
@@ -114,7 +111,7 @@ pnpm check
 
 1. [架构地图](docs/00-architecture-map.md)：插件、Context、Service、event、Session log 如何协作。
 2. [最小插件](docs/01-minimal-plugin.md)：从空仓库到一个完整工具，每段解释只引入对应代码。
-3. [生命周期与 effect](docs/02-lifecycle-and-effects.md)：HMR、安全释放、必需与可选依赖。
+3. [生命周期与 effect](docs/02-lifecycle-and-effects.md)：异步 effect、资源 quiescence 与卸载测试。
 4. [能力三角色](docs/03-capability-seams.md)：什么时候拆 Definition / Provider / Consumer，以及四种常见拓扑。
 5. [事件与持久化](docs/04-events-and-durability.md)：waterfall、commit point、`model-visible ⇔ logged`。
 6. [测试与发布](docs/05-testing-and-release.md)：为何 100% 单测仍可能完全不可用。
@@ -125,10 +122,14 @@ pnpm check
 ## 仓库结构
 
 ```text
-docs/                         渐进教程、参考和审计证据
-examples/progressive/src/     唯一手工维护的最终插件
-examples/progressive/tests/   keyless 行为与 HMR disposal 测试
-examples/progressive/checkpoints/  自动生成的阅读快照
+docs/                         五章渐进教程、参考和审计证据
+examples/tutorials.json       互动章节的唯一顺序目录
+examples/progressive/         可安装的最小 Consumer 源码与 composition
+examples/lifecycle/           外部资源、effect 与 quiescence 教程
+examples/capability/          Definition / Provider / Consumer 教程
+examples/events/              durable context、AgentLoop 与 replay 教程
+examples/testing/             从 unit 到 profile activation 的验收教程
+examples/*/checkpoints/       自动生成的多文件仓库快照
 cordis.patch.yml              安装后加入 profile 的组合层
 lib/                          构建生成的 ESM 入口与类型声明（不提交）
 preview/                      无构建的本地 scrollytelling 阅读器
@@ -151,7 +152,7 @@ audit-manifest.json           审计 commit、日期与运行时版本基线
 
 本仓库借鉴 [PI from Scratch](https://github.com/SaladDay/pi-from-scratch/tree/db85b87976812997398a757d9ff609a34ebd7de7) 的方法：先画模块地图，再沿数据流引入概念；最终源码是事实源，教程 checkpoint 由脚本生成。仓库不构建或部署网站；GitHub 内可以直接浏览编号快照和 diff，本地 `pnpm preview` 则提供滚动驱动的代码演进效果。
 
-教程中的代码是为教学而缩小的 Consumer 插件。要把它合并进 Harness 主仓库，还需满足上游的 package invariant、真实 Loader composition、keyless snapshot、README/JSDoc、双语文档与 Agent Note 等仓库规则，详见[测试与发布](docs/05-testing-and-release.md)。
+教程中的五套代码都经过缩小，以便一次只讲清一个 Harness 责任。要把其中的模式合并进 Harness 主仓库，还需满足所属包的 invariant、真实 Loader composition、keyless snapshot、README/JSDoc、双语文档与 Agent Note 等仓库规则，详见[测试与发布](docs/05-testing-and-release.md)。
 
 ## 参与贡献
 

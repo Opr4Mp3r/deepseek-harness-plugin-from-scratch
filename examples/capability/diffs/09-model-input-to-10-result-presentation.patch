@@ -1,0 +1,34 @@
+diff --git a/examples/capability/checkpoints/09-model-input/src/consumer.ts b/examples/capability/checkpoints/10-result-presentation/src/consumer.ts
+--- a/examples/capability/checkpoints/09-model-input/src/consumer.ts
++++ b/examples/capability/checkpoints/10-result-presentation/src/consumer.ts
+@@ -1,0 +2,5 @@
++import type {
++  InferValue,
++  ToolCallView,
++  ValueSchemaSpec,
++} from '@deepseek-ai/dsh-tools'
+@@ -19,0 +25,24 @@
++
++const summaryOutputSchema = {
++  type: 'object',
++  additionalProperties: false,
++  properties: {
++    summary: { type: 'string', required: true },
++    truncated: { type: 'boolean', required: true },
++  },
++} as const satisfies ValueSchemaSpec
++
++type SummaryValue = InferValue<typeof summaryOutputSchema>
++
++function renderSummary(value: SummaryValue) {
++  return [{ type: 'text' as const, text: value.summary }]
++}
++
++function presentSummaryCall(args: SummaryArgs): ToolCallView {
++  return {
++    card: 'generic',
++    title: 'Summarize text',
++    kind: 'other',
++    rawInput: args,
++  }
++}

@@ -1,37 +1,62 @@
-import { mkdir, readdir, unlink, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { mkdir, readdir, rmdir, unlink, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 
-import { loadProgressive, renderAppendPatch, renderCheckpoint } from './checkpoint-lib.ts'
+import {
+  checkpointOutputPath,
+  diffOutputPath,
+  loadLessons,
+  renderLessonPatch,
+} from './checkpoint-lib.ts'
+import type { RenderedStep } from './checkpoint-lib.ts'
 
-const output = resolve('examples/progressive/checkpoints')
-const diffs = resolve('examples/progressive/diffs')
-const { manifest, source } = await loadProgressive()
-await mkdir(output, { recursive: true })
-await mkdir(diffs, { recursive: true })
+const lessons = await loadLessons()
+let checkpointCount = 0
 
-const checkpointFiles = new Set<string>()
-const diffFiles = new Set<string>()
-let previous: { id: string; code: string } | undefined
-for (const checkpoint of manifest.checkpoints) {
-  const code = renderCheckpoint(source, checkpoint)
-  const checkpointName = `${checkpoint.id}.ts`
-  checkpointFiles.add(checkpointName)
-  await writeFile(resolve(output, checkpointName), code)
-  if (previous !== undefined) {
-    const name = `${previous.id}-to-${checkpoint.id}.patch`
-    diffFiles.add(name)
-    await writeFile(resolve(diffs, name), renderAppendPatch(previous.id, previous.code, checkpoint.id, code))
-  }
-  previous = { id: checkpoint.id, code }
-}
-
-async function pruneGenerated(directory: string, expected: Set<string>, suffix: string): Promise<void> {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith(suffix) && !expected.has(entry.name)) {
-      await unlink(resolve(directory, entry.name))
+for (const lesson of lessons) {
+  const expected = new Set<string>()
+  let previous: RenderedStep | undefined
+  for (const step of lesson.steps) {
+    for (const [file, code] of Object.entries(step.repo)) {
+      const path = checkpointOutputPath(lesson, step, file)
+      expected.add(path)
+      await writeGenerated(path, code)
     }
+    if (previous !== undefined) {
+      const path = diffOutputPath(lesson, previous.id, step.id)
+      expected.add(path)
+      await writeGenerated(path, renderLessonPatch(lesson, previous, step))
+    }
+    previous = step
+    checkpointCount += 1
+  }
+
+  const generatedRoots = [
+    resolve(lesson.directory, 'checkpoints'),
+    resolve(lesson.directory, 'diffs'),
+  ]
+  for (const generatedRoot of generatedRoots) {
+    await mkdir(generatedRoot, { recursive: true })
+    await pruneGenerated(generatedRoot, expected)
   }
 }
 
-await pruneGenerated(output, checkpointFiles, '.ts')
-await pruneGenerated(diffs, diffFiles, '.patch')
+async function writeGenerated(path: string, content: string): Promise<void> {
+  const absolute = resolve(path)
+  await mkdir(dirname(absolute), { recursive: true })
+  await writeFile(absolute, content)
+}
+
+async function pruneGenerated(directory: string, expected: ReadonlySet<string>): Promise<void> {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolute = resolve(directory, entry.name)
+    if (entry.isDirectory()) {
+      await pruneGenerated(absolute, expected)
+      if ((await readdir(absolute)).length === 0) await rmdir(absolute)
+      continue
+    }
+    const relative = absolute.slice(resolve('.').length + 1).split('\\').join('/')
+    if (!expected.has(relative)) await unlink(absolute)
+  }
+}
+
+console.log(`generated ${checkpointCount} checkpoints across ${lessons.length} lessons`)

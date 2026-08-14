@@ -1,0 +1,101 @@
+{
+  "id": "03-capability-seams",
+  "title": "03 · 能力三角色",
+  "tutorial": "docs/03-capability-seams.md",
+  "sources": [
+    {
+      "source": "src/definition.ts",
+      "file": "src/definition.ts",
+      "language": "ts"
+    },
+    {
+      "source": "src/provider.ts",
+      "file": "src/provider.ts",
+      "language": "ts"
+    },
+    {
+      "source": "src/consumer.ts",
+      "file": "src/consumer.ts",
+      "language": "ts"
+    },
+    {
+      "source": "tests/capability.spec.ts",
+      "file": "tests/capability.spec.ts",
+      "language": "ts"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "01-stable-values",
+      "title": "先固定请求、规格和结果",
+      "file": "src/definition.ts",
+      "focus": [1, 14]
+    },
+    {
+      "id": "02-service-key",
+      "title": "让 Definition 拥有 Context key",
+      "file": "src/definition.ts",
+      "focus": [18, 31]
+    },
+    {
+      "id": "03-service-operations",
+      "title": "把实现义务写进 Definition",
+      "file": "src/definition.ts",
+      "focus": [29, 34]
+    },
+    {
+      "id": "04-provider-config",
+      "title": "让 Provider 拥有部署配置",
+      "file": "src/provider.ts",
+      "focus": [10, 36]
+    },
+    {
+      "id": "05-resolve-request",
+      "title": "显式落定默认值和上限",
+      "file": "src/provider.ts",
+      "focus": [38, 48]
+    },
+    {
+      "id": "06-run-provider",
+      "title": "实现算法并传递取消信号",
+      "file": "src/provider.ts",
+      "focus": [50, 61]
+    },
+    {
+      "id": "07-concrete-provider",
+      "title": "用具体 Service 提供能力",
+      "file": "src/provider.ts",
+      "focus": [63, 80]
+    },
+    {
+      "id": "08-consumer-dependencies",
+      "title": "Consumer 只依赖稳定服务",
+      "file": "src/consumer.ts",
+      "focus": [3, 4]
+    },
+    {
+      "id": "09-model-input",
+      "title": "由 Consumer 定义模型输入",
+      "file": "src/consumer.ts",
+      "focus": [7, 19]
+    },
+    {
+      "id": "10-result-presentation",
+      "title": "分开规范结果、模型文本和 UI",
+      "file": "src/consumer.ts",
+      "focus": [26, 48]
+    },
+    {
+      "id": "11-register-consumer",
+      "title": "通过 Definition 调用 Provider",
+      "file": "src/consumer.ts",
+      "focus": [52, 67]
+    },
+    {
+      "id": "12-swap-provider",
+      "title": "替换 Provider 而不改变模型接口",
+      "file": "tests/capability.spec.ts",
+      "focus": [25, 76]
+    }
+  ]
+}

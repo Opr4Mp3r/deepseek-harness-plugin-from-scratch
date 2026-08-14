@@ -2,62 +2,56 @@ import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import {
-  isInsertionOnly,
-  loadProgressive,
-  renderAppendPatch,
-  renderCanonicalSource,
-  renderCheckpoint,
+  checkpointOutputPath,
+  diffOutputPath,
+  loadLessons,
+  renderLessonPatch,
 } from './checkpoint-lib.ts'
+import type { RenderedStep } from './checkpoint-lib.ts'
 
-const { manifest, source } = await loadProgressive()
-const seen = new Set<string>()
-const expectedCheckpointFiles: string[] = []
-const expectedDiffFiles: string[] = []
-let previous = ''
-let previousId: string | undefined
+const lessons = await loadLessons()
+let checkpointCount = 0
 
-for (const checkpoint of manifest.checkpoints) {
-  if (!/^\d{2}-[a-z0-9-]+$/.test(checkpoint.id)) {
-    throw new Error(`invalid checkpoint id: ${checkpoint.id}`)
-  }
-  if (seen.has(checkpoint.id)) throw new Error(`duplicate checkpoint id: ${checkpoint.id}`)
-  seen.add(checkpoint.id)
-  expectedCheckpointFiles.push(`${checkpoint.id}.ts`)
-  const expected = renderCheckpoint(source, checkpoint)
-  const path = resolve('examples/progressive/checkpoints', `${checkpoint.id}.ts`)
-  const actual = await readFile(path, 'utf8')
-  if (actual !== expected) {
-    throw new Error(`${path} drifted; run pnpm generate:checkpoints`)
-  }
-  if (previous.length > 0 && !isInsertionOnly(previous, expected)) {
-    throw new Error(`${checkpoint.id} rewrites earlier code instead of inserting lines`)
-  }
-  if (previousId !== undefined) {
-    const name = `${previousId}-to-${checkpoint.id}.patch`
-    expectedDiffFiles.push(name)
-    const path = resolve('examples/progressive/diffs', name)
-    const actualPatch = await readFile(path, 'utf8')
-    const expectedPatch = renderAppendPatch(previousId, previous, checkpoint.id, expected)
-    if (actualPatch !== expectedPatch) {
-      throw new Error(`${path} drifted; run pnpm generate:checkpoints`)
+for (const lesson of lessons) {
+  const expected = new Map<string, string>()
+  let previous: RenderedStep | undefined
+  for (const step of lesson.steps) {
+    for (const [file, code] of Object.entries(step.repo)) {
+      expected.set(checkpointOutputPath(lesson, step, file), code)
     }
+    if (previous !== undefined) {
+      expected.set(
+        diffOutputPath(lesson, previous.id, step.id),
+        renderLessonPatch(lesson, previous, step),
+      )
+    }
+    previous = step
+    checkpointCount += 1
   }
-  previous = expected
-  previousId = checkpoint.id
-}
 
-if (previous !== renderCanonicalSource(source)) {
-  throw new Error('the final checkpoint must equal the canonical source without generator markers')
-}
+  for (const [path, wanted] of expected) {
+    const actual = await readFile(resolve(path), 'utf8')
+    if (actual !== wanted) throw new Error(`${path} drifted; run pnpm generate:checkpoints`)
+  }
 
-async function verifyFileSet(directory: string, expected: string[]): Promise<void> {
-  const actual = (await readdir(directory)).sort()
-  const wanted = [...expected].sort()
-  if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
-    throw new Error(`${directory} has stale or missing generated files; run pnpm generate:checkpoints`)
+  const actualFiles = [
+    ...await collectFiles(resolve(lesson.directory, 'checkpoints')),
+    ...await collectFiles(resolve(lesson.directory, 'diffs')),
+  ].sort()
+  const wantedFiles = [...expected.keys()].sort()
+  if (JSON.stringify(actualFiles) !== JSON.stringify(wantedFiles)) {
+    throw new Error(`${lesson.relativeDirectory} has stale or missing generated files; run pnpm generate:checkpoints`)
   }
 }
 
-await verifyFileSet('examples/progressive/checkpoints', expectedCheckpointFiles)
-await verifyFileSet('examples/progressive/diffs', expectedDiffFiles)
-console.log(`verified ${manifest.checkpoints.length} progressive checkpoints`)
+async function collectFiles(directory: string): Promise<string[]> {
+  const files: string[] = []
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolute = resolve(directory, entry.name)
+    if (entry.isDirectory()) files.push(...await collectFiles(absolute))
+    else files.push(absolute.slice(resolve('.').length + 1).split('\\').join('/'))
+  }
+  return files
+}
+
+console.log(`verified ${checkpointCount} checkpoints across ${lessons.length} lessons`)

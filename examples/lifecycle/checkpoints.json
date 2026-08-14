@@ -1,0 +1,83 @@
+{
+  "id": "02-lifecycle-and-effects",
+  "title": "02 · 生命周期与 Effect",
+  "tutorial": "docs/02-lifecycle-and-effects.md",
+  "sources": [
+    {
+      "source": "src/events.ts",
+      "file": "src/events.ts",
+      "language": "ts"
+    },
+    {
+      "source": "src/source.ts",
+      "file": "src/source.ts",
+      "language": "ts"
+    },
+    {
+      "source": "src/reporter.ts",
+      "file": "src/reporter.ts",
+      "language": "ts"
+    },
+    {
+      "source": "tests/lifecycle.spec.ts",
+      "file": "tests/lifecycle.spec.ts",
+      "language": "ts"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "01-event-contract",
+      "title": "声明需要等待的 tick 事件",
+      "file": "src/events.ts",
+      "focus": [1, 13]
+    },
+    {
+      "id": "02-source-config",
+      "title": "让部署者控制脉冲频率",
+      "file": "src/source.ts",
+      "focus": [5, 23]
+    },
+    {
+      "id": "03-resource-state",
+      "title": "记录外部资源的运行状态",
+      "file": "src/source.ts",
+      "focus": [25, 32]
+    },
+    {
+      "id": "04-track-callbacks",
+      "title": "跟踪每个在途回调",
+      "file": "src/source.ts",
+      "focus": [32, 40]
+    },
+    {
+      "id": "05-quiescent-close",
+      "title": "停止新工作并等待旧工作",
+      "file": "src/source.ts",
+      "focus": [42, 48]
+    },
+    {
+      "id": "06-own-with-effect",
+      "title": "把资源所有权交给 fiber",
+      "file": "src/source.ts",
+      "focus": [51, 58]
+    },
+    {
+      "id": "07-listener-effect",
+      "title": "让 ctx.on 自动撤销监听器",
+      "file": "src/reporter.ts",
+      "focus": [1, 10]
+    },
+    {
+      "id": "08-observe-teardown",
+      "title": "从外部观察卸载结果",
+      "file": "tests/lifecycle.spec.ts",
+      "focus": [12, 34]
+    },
+    {
+      "id": "09-await-quiescence",
+      "title": "证明 dispose 等到完全停稳",
+      "file": "tests/lifecycle.spec.ts",
+      "focus": [36, 58]
+    }
+  ]
+}

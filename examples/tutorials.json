@@ -1,0 +1,9 @@
+{
+  "lessons": [
+    "examples/progressive/checkpoints.json",
+    "examples/lifecycle/checkpoints.json",
+    "examples/capability/checkpoints.json",
+    "examples/events/checkpoints.json",
+    "examples/testing/checkpoints.json"
+  ]
+}

@@ -10,14 +10,14 @@ pnpm check
 pnpm check:profile
 ```
 
-修改渐进示例时，只编辑 `examples/progressive/src/index.ts` 与 `checkpoints.json`，然后运行：
+修改渐进示例时，只编辑对应章节的 canonical source、`checkpoints.json` 和正文中紧邻 marker 的解释与代码片段，然后运行：
 
 ```sh
 pnpm generate:checkpoints
 pnpm check
 ```
 
-不要手改 `examples/progressive/checkpoints/*.ts`。
+不要手改 `examples/*/checkpoints/` 或 `examples/*/diffs/` 下的生成文件。
 
 ## 更新上游基线
 

@@ -1,0 +1,30 @@
+diff --git a/examples/events/checkpoints/04-defer-context/src/tool.ts b/examples/events/checkpoints/04-defer-context/src/tool.ts
+new file mode 100644
+--- /dev/null
++++ b/examples/events/checkpoints/04-defer-context/src/tool.ts
+@@ -0,0 +1,25 @@
++import { defineTool } from '@deepseek-ai/dsh-tools'
++
++import { createProjectRuleContext } from './context.ts'
++import { projectRuleOutput, projectRuleParameters } from './contracts.ts'
++
++export const rememberProjectRule = defineTool({
++  name: 'remember_project_rule',
++  description: 'Add one project rule to the next model step.',
++  parameters: projectRuleParameters,
++  output: {
++    schema: projectRuleOutput,
++    render: (_args, value) => [{
++      type: 'text',
++      text: `Saved project rule: ${value.rule}`,
++    }],
++  },
++  async execute(args, exec) {
++    const rule = args.rule.trim()
++    if (rule.length === 0) {
++      throw new Error('remember_project_rule: `rule` must not be blank')
++    }
++    exec.deferContext(createProjectRuleContext(rule))
++    return { rule }
++  },
++})

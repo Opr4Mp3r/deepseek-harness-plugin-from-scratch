@@ -1,0 +1,16 @@
+diff --git a/examples/capability/checkpoints/04-provider-config/src/provider.ts b/examples/capability/checkpoints/05-resolve-request/src/provider.ts
+--- a/examples/capability/checkpoints/04-provider-config/src/provider.ts
++++ b/examples/capability/checkpoints/05-resolve-request/src/provider.ts
+@@ -36,0 +37,12 @@
++
++function resolveRequest(
++  config: ResolvedConfig,
++  request: SummaryRequest,
++): SummarySpec {
++  const requested = request.maxCharacters ?? config.defaultMaxCharacters
++  positiveInteger('request.maxCharacters', requested)
++  return {
++    text: request.text,
++    maxCharacters: Math.min(requested, config.maxCharactersCap),
++  }
++}

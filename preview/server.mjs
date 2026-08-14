@@ -1,11 +1,13 @@
 import { execFile } from 'node:child_process'
 import { readFile, realpath, stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
-import { extname, relative, resolve, sep } from 'node:path'
+import { extname, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { marked } from 'marked'
+import { loadLessons } from '../scripts/checkpoint-lib.ts'
 
 const execFileAsync = promisify(execFile)
+const MINIMAL_LESSON_ID = '01-minimal-plugin'
 const root = await realpath(resolve(process.argv[2] ?? '.'))
 const port = Number(process.argv[3] ?? '4175')
 if (!Number.isInteger(port) || (port !== 0 && (port < 1024 || port > 65535))) {
@@ -19,8 +21,9 @@ try {
   const { stdout } = await execFileAsync(process.execPath, [
     '--import',
     'tsx',
-    'examples/progressive/tests/loader-runner.mjs',
-    'examples/progressive/cordis.yml',
+    'examples/testing/acceptance/loader-runner.mjs',
+    'examples/testing/cordis.yml',
+    'Acceptance, Ada!',
   ], { cwd: root })
   const line = stdout.split('\n').find(value => value.startsWith('DSH_TUTORIAL_RESULT '))
   if (line === undefined) throw new Error('Loader smoke did not emit a result')
@@ -29,90 +32,24 @@ try {
   smoke = { ok: false, value: error instanceof Error ? error.message : String(error) }
 }
 
-const checkpointManifest = JSON.parse(
-  await readFile(resolve(root, 'examples/progressive/checkpoints.json'), 'utf8'),
-)
-if (
-  typeof checkpointManifest.source !== 'string'
-  || typeof checkpointManifest.file !== 'string'
-  || typeof checkpointManifest.tutorial !== 'string'
-  || !Array.isArray(checkpointManifest.checkpoints)
-) {
-  throw new Error('progressive checkpoint manifest is missing preview metadata')
+const lessons = await loadLessons(root)
+const minimalLesson = lessons.find(lesson => lesson.manifest.id === MINIMAL_LESSON_ID)
+if (minimalLesson === undefined) {
+  throw new Error(`preview needs tutorial ${MINIMAL_LESSON_ID}`)
 }
-const checkpointDefinitions = checkpointManifest.checkpoints.map(checkpoint => {
-  if (
-    typeof checkpoint.id !== 'string'
-    || typeof checkpoint.title !== 'string'
-    || !Array.isArray(checkpoint.focus)
-    || checkpoint.focus.length !== 2
-    || !checkpoint.focus.every(Number.isInteger)
-  ) {
-    throw new Error(`invalid preview checkpoint: ${JSON.stringify(checkpoint)}`)
-  }
-  return {
-    ...checkpoint,
-    file: checkpointManifest.file,
-    snapshot: `examples/progressive/checkpoints/${checkpoint.id}.ts`,
-  }
-})
-if (checkpointDefinitions.length === 0) throw new Error('preview needs at least one checkpoint')
-
-const canonicalSource = await readFile(
-  resolve(root, 'examples/progressive', checkpointManifest.source),
-  'utf8',
+const lessonByPath = new Map(
+  lessons.map(lesson => [`/${lesson.manifest.tutorial}`, lesson]),
 )
-
-function checkpointAddedLines(source, id) {
-  const target = Number(id.slice(0, 2))
-  const added = []
-  let activeId
-  let renderedLine = 0
-  for (const line of source.trimEnd().split('\n')) {
-    const marker = /^\/\/ checkpoint:(\d{2}-[a-z0-9-]+)$/.exec(line)
-    if (marker !== null) {
-      activeId = marker[1]
-      continue
-    }
-    if (activeId === undefined || Number(activeId.slice(0, 2)) > target) continue
-    renderedLine += 1
-    if (activeId === id) added.push(renderedLine)
-  }
-  if (added.length === 0) throw new Error(`checkpoint ${id} has no attributed source lines`)
-  return added
-}
-
-const tutorialMarkdown = await readFile(resolve(root, checkpointManifest.tutorial), 'utf8')
-const tutorialCheckpoints = await Promise.all(checkpointDefinitions.map(async definition => ({
-  ...definition,
-  code: await readFile(resolve(root, definition.snapshot), 'utf8'),
-  addedLines: checkpointAddedLines(canonicalSource, definition.id),
-})))
-
-const tutorialMarkerIds = Array.from(
-  tutorialMarkdown.matchAll(/^<!-- checkpoint:(\d{2}-[a-z0-9-]+) -->$/gm),
-  match => match[1],
-)
-const manifestIds = tutorialCheckpoints.map(checkpoint => checkpoint.id)
-if (JSON.stringify(tutorialMarkerIds) !== JSON.stringify(manifestIds)) {
-  throw new Error('tutorial checkpoint markers must match the manifest exactly and in order')
-}
-const finalCheckpoint = tutorialCheckpoints.at(-1)
-if (finalCheckpoint === undefined) throw new Error('preview needs a final checkpoint')
+lessonByPath.set('/', minimalLesson)
 
 const navigation = [
   ['/', '互动教程'],
   ['/README.md', '概览'],
   ['/docs/00-architecture-map.md', '00 · 架构地图'],
-  ['/docs/01-minimal-plugin.md', '01 · 最小插件'],
-  ['/docs/02-lifecycle-and-effects.md', '02 · 生命周期与 Effect'],
-  ['/docs/03-capability-seams.md', '03 · 能力三角色'],
-  ['/docs/04-events-and-durability.md', '04 · 事件与持久化'],
-  ['/docs/05-testing-and-release.md', '05 · 测试与发布'],
+  ...lessons.map(lesson => [`/${lesson.manifest.tutorial}`, lesson.manifest.title]),
   ['/docs/anti-patterns.md', '反模式'],
   ['/docs/checklist.md', '交付检查单'],
   ['/docs/audit-report.md', '审计证据'],
-  [`/examples/progressive/checkpoints/${finalCheckpoint.id}.ts`, '最终插件代码'],
 ]
 
 function escapeHtml(value) {
@@ -224,9 +161,9 @@ function documentLayout(title, body, currentPath) {
 </html>`
 }
 
-function tutorialBody() {
-  let markdown = tutorialMarkdown
-  for (const checkpoint of tutorialCheckpoints) {
+function tutorialBody(lesson) {
+  let markdown = lesson.tutorial
+  for (const checkpoint of lesson.steps) {
     const marker = `<!-- checkpoint:${checkpoint.id} -->`
     const anchor = `<div class="checkpoint-anchor" data-checkpoint="${checkpoint.id}" aria-hidden="true"></div>\n\n`
     markdown = markdown.replace(marker, anchor)
@@ -234,23 +171,37 @@ function tutorialBody() {
   return addHeadingIds(marked.parse(markdown))
 }
 
-function tutorialLayout() {
-  const checkpointPayload = tutorialCheckpoints.map(({ id, title, file, focus, code, addedLines }) => ({
-    id,
-    title,
-    file,
-    focus,
-    addedLines,
-    repo: { [file]: code },
-  }))
-  const smokeText = escapeHtml(JSON.stringify(smoke.value, null, 2))
-  const smokeLabel = smoke.ok ? '真实 Loader smoke 已通过' : '真实 Loader smoke 失败'
-  const smokeClass = smoke.ok ? 'is-ok' : 'is-failed'
+function tutorialLayout(lesson) {
+  const checkpointPayload = lesson.steps
+  const isMinimalLesson = lesson.manifest.id === MINIMAL_LESSON_ID
+  const evidence = isMinimalLesson
+    ? smoke
+    : {
+        ok: true,
+        value: {
+          lesson: lesson.manifest.id,
+          checkpoints: lesson.steps.length,
+          files: Object.keys(lesson.steps.at(-1)?.repo ?? {}),
+          verify: 'pnpm check',
+        },
+      }
+  const smokeText = escapeHtml(JSON.stringify(evidence.value, null, 2))
+  const smokeLabel = isMinimalLesson
+    ? evidence.ok ? '真实 Loader smoke 已通过' : '真实 Loader smoke 失败'
+    : '本章 checkpoint 绑定已验证'
+  const smokeClass = evidence.ok ? 'is-ok' : 'is-failed'
+  const smokeFoot = isMinimalLesson
+    ? '真实 Loader + Include · keyless · 预览启动时执行'
+    : 'manifest + canonical source + Markdown marker · 预览启动时验证'
+  const chapterLinks = lessons.map(item => {
+    const current = item.manifest.id === lesson.manifest.id ? ' aria-current="page"' : ''
+    return `<a href="/${item.manifest.tutorial}"${current}>${escapeHtml(item.manifest.title)}</a>`
+  }).join('')
 
   return String.raw`<!doctype html>
 <html lang="zh-CN">
 <head>
-  ${pageHead('从一个最小 Consumer 开始')}
+  ${pageHead(lesson.manifest.title)}
   <script>try{const theme=localStorage.getItem('reader-theme');if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme}catch{}</script>
   <style>
     :root {
@@ -277,8 +228,8 @@ function tutorialLayout() {
     button:focus-visible,a:focus-visible,[tabindex]:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
     ::selection { background:var(--new-code); }
     .site-header { position:fixed; z-index:50; inset:0 0 auto; height:var(--header-height); display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 clamp(18px,3vw,48px); border-bottom:1px solid var(--line); background:var(--header-bg); backdrop-filter:blur(12px); }
-    .brand { justify-self:start; display:flex; align-items:center; gap:9px; color:var(--ink); text-decoration:none; }
-    .brand-mark { width:26px; height:26px; display:grid; place-items:center; border:1px solid var(--ink); font:var(--base) var(--mono); }
+    .brand { min-width:0; justify-self:start; display:flex; align-items:center; gap:9px; color:var(--ink); text-decoration:none; }
+    .brand-mark { width:26px; height:26px; flex:0 0 auto; display:grid; place-items:center; border:1px solid var(--ink); font:var(--base) var(--mono); }
     .brand strong { font:600 var(--small) var(--mono); }
     .chapter-nav { align-self:stretch; display:flex; align-items:stretch; }
     .chapter-nav a { position:relative; min-width:112px; display:grid; place-items:center; padding:0 16px; color:var(--muted); font-size:var(--small); text-decoration:none; }
@@ -322,7 +273,7 @@ function tutorialLayout() {
     .editor-lock { width:32px; height:32px; display:grid; place-items:center; margin-left:auto; padding:0; border:0; background:transparent; color:var(--muted); cursor:pointer; }
     .editor-lock:hover,.editor-lock.is-active { background:var(--paper-deep); color:var(--ink); }
     .editor-lock svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; stroke-width:1.7; }
-    .repo-workspace { height:calc(100% - 52px); display:grid; grid-template-columns:146px minmax(0,1fr); }
+    .repo-workspace { height:calc(100% - 52px); display:grid; grid-template-columns:190px minmax(0,1fr); }
     .file-tree { overflow-y:auto; padding:12px 8px; border-right:1px solid var(--line); background:var(--paper-deep); overscroll-behavior:none; }
     .tree-root { display:flex; align-items:center; gap:7px; padding:8px 7px 10px; color:var(--ink-soft); font:var(--small) var(--mono); }
     .tree-root svg,.file-tree button svg,.code-tab svg { width:14px; height:14px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.6; }
@@ -358,6 +309,13 @@ function tutorialLayout() {
     @keyframes code-write { from { clip-path:inset(0 100% 0 0); } to { clip-path:inset(0); } }
     @keyframes file-birth { 0% { opacity:0; filter:blur(5px); transform:translate3d(-18px,0,0) scale(.58); } 54% { opacity:1; filter:blur(0); transform:translate3d(4px,0,0) scale(1.09); } 74% { transform:translate3d(-2px,0,0) scale(.97); } 100% { opacity:1; transform:none; } }
     @media (max-width:1180px) {
+      .site-header { grid-template-columns:minmax(0,1fr) auto; }
+      .mobile-nav-toggle { display:grid; }
+      .chapter-nav { position:fixed; z-index:70; top:var(--header-height); right:0; left:0; display:flex; visibility:hidden; flex-direction:column; align-items:stretch; max-height:calc(100dvh - var(--header-height)); overflow:auto; padding:8px 16px 12px; border-bottom:1px solid var(--line-strong); background:var(--paper); box-shadow:0 18px 34px rgba(0,0,0,.24); pointer-events:none; transform:translateY(-110%); transition:transform 240ms cubic-bezier(.16,1,.3,1),visibility 0s linear 240ms; }
+      .chapter-nav.is-open { visibility:visible; pointer-events:auto; transform:none; transition-delay:0s; }
+      .chapter-nav a { min-height:46px; display:flex; justify-content:flex-start; padding:0 12px; border-bottom:1px solid var(--line); }
+      .chapter-nav a:last-child { border-bottom:0; }
+      .chapter-nav a::after { right:auto; left:12px; width:32px; }
       .reader-grid { display:block; width:min(100%,820px); }
       .article-body { max-width:none; }
       .panel-column { position:fixed; z-index:82; right:12px; bottom:12px; left:12px; height:min(80vh,760px); padding:0; opacity:0; pointer-events:none; transform:translateY(calc(100% + 24px)); transition:transform 320ms cubic-bezier(.16,1,.3,1),opacity 180ms ease; }
@@ -372,14 +330,10 @@ function tutorialLayout() {
       .mobile-panel-button span { color:var(--line-strong); font:var(--small) var(--mono); }
     }
     @media (max-width:680px) {
-      .site-header { grid-template-columns:1fr auto; padding:0 16px; }
-      .brand strong { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .mobile-nav-toggle { display:grid; }
-      .chapter-nav { position:fixed; z-index:70; top:var(--header-height); right:0; left:0; display:flex; visibility:hidden; flex-direction:column; align-items:stretch; padding:8px 16px 12px; border-bottom:1px solid var(--line-strong); background:var(--paper); box-shadow:0 18px 34px rgba(0,0,0,.24); pointer-events:none; transform:translateY(-110%); transition:transform 240ms cubic-bezier(.16,1,.3,1),visibility 0s linear 240ms; }
-      .chapter-nav.is-open { visibility:visible; pointer-events:auto; transform:none; transition-delay:0s; }
-      .chapter-nav a { min-height:46px; display:flex; justify-content:flex-start; padding:0 12px; border-bottom:1px solid var(--line); }
-      .chapter-nav a:last-child { border-bottom:0; }
-      .chapter-nav a::after { right:auto; left:12px; width:32px; }
+      .site-header { grid-template-columns:minmax(0,1fr) auto; padding:0 16px; }
+      .brand { width:100%; }
+      .brand strong { min-width:0; max-width:none; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .github-link { display:none; }
       .reader-grid { padding:0 18px 72px; }
       .lesson-intro { padding-top:38px; }
       .article-body pre { margin-right:-18px; margin-left:-18px; border-right:0; border-left:0; }
@@ -398,9 +352,7 @@ function tutorialLayout() {
   <header class="site-header">
     <a class="brand" href="/"><span class="brand-mark">D</span><strong>Harness Plugin from Scratch</strong></a>
     <nav class="chapter-nav" id="chapter-nav" aria-label="教程章节">
-      <a href="/" aria-current="page">最小插件</a>
-      <a href="/docs/00-architecture-map.md">架构地图</a>
-      <a href="/docs/05-testing-and-release.md">测试与发布</a>
+      ${chapterLinks}
     </nav>
     <div class="header-actions">
       <a class="github-link" href="https://github.com/Opr4Mp3r/deepseek-harness-plugin-from-scratch">GitHub ↗</a>
@@ -417,18 +369,18 @@ function tutorialLayout() {
     <section class="reader-grid">
       <article class="lesson-column" id="lesson-article">
         <div class="lesson-intro">沿着真实装配路径阅读；正文越过视口中的阅读线时，右侧源码随之演进。</div>
-        <div class="article-body">${tutorialBody()}</div>
+        <div class="article-body">${tutorialBody(lesson)}</div>
         <section class="smoke-inline ${smokeClass}" aria-label="运行验证">
           <header><span class="smoke-dot" aria-hidden="true"></span>${smokeLabel}</header>
           <pre>${smokeText}</pre>
-          <p>真实 Loader + Include · keyless · 预览启动时执行</p>
+          <p>${smokeFoot}</p>
         </section>
       </article>
       <div class="panel-column" id="panel-column" aria-label="随阅读演进的代码仓库">
         <button class="drawer-close" id="drawer-close" type="button" aria-label="关闭代码面板">×</button>
         <aside class="code-panel" id="code-panel" aria-label="随阅读演进的代码仓库">
           <div class="panel-heading">
-            <strong>progressive /</strong>
+            <strong>${escapeHtml(lesson.manifest.id)} /</strong>
             <button class="editor-lock" id="editor-lock" type="button" aria-pressed="false"></button>
           </div>
           <div class="repo-workspace">
@@ -475,7 +427,6 @@ function tutorialLayout() {
     const state = {
       activeIndex: -1,
       repo: {},
-      previousRepo: {},
       newFiles: new Set(),
       openFiles: [],
       fileChoice: null,
@@ -519,39 +470,6 @@ function tutorialLayout() {
     function splitCode(value) {
       if (!value) return []
       return value.replace(/\n$/, '').split('\n')
-    }
-
-    function addedLines(previous, current) {
-      const before = splitCode(previous)
-      const after = splitCode(current)
-      if (!before.length) return new Set(after.map(function (_line, index) { return index + 1 }))
-      const matrix = Array.from({ length: before.length + 1 }, function () {
-        return new Uint16Array(after.length + 1)
-      })
-      for (let i = 1; i <= before.length; i += 1) {
-        for (let j = 1; j <= after.length; j += 1) {
-          matrix[i][j] = before[i - 1] === after[j - 1]
-            ? matrix[i - 1][j - 1] + 1
-            : Math.max(matrix[i - 1][j], matrix[i][j - 1])
-        }
-      }
-      const matched = new Set()
-      let i = before.length
-      let j = after.length
-      while (i > 0 && j > 0) {
-        if (before[i - 1] === after[j - 1]) {
-          matched.add(j)
-          i -= 1
-          j -= 1
-        } else if (matrix[i - 1][j] >= matrix[i][j - 1]) {
-          i -= 1
-        } else {
-          j -= 1
-        }
-      }
-      return new Set(after.map(function (_line, index) { return index + 1 }).filter(function (line) {
-        return !matched.has(line)
-      }))
     }
 
     function escape(value) {
@@ -603,8 +521,8 @@ function tutorialLayout() {
       if (state.activeIndex < 0) return new Set()
       const checkpoint = checkpoints[state.activeIndex]
       if (checkpoint.file !== file) return new Set()
-      if (Array.isArray(checkpoint.addedLines)) return new Set(checkpoint.addedLines)
-      return addedLines(state.previousRepo[file] || '', state.repo[file] || '')
+      const attributed = checkpoint.addedLines && checkpoint.addedLines[file]
+      return new Set(Array.isArray(attributed) ? attributed : [])
     }
 
     function updateLockButton() {
@@ -627,18 +545,18 @@ function tutorialLayout() {
       const availableOpen = state.openFiles.filter(function (file) { return Object.hasOwn(state.repo, file) })
       const visibleOpen = selected && !availableOpen.includes(selected) ? availableOpen.concat(selected) : availableOpen
 
-      fileTree.innerHTML = '<div class="tree-root">' + icons.folder + ' src</div>' + (files.length
+      fileTree.innerHTML = '<div class="tree-root">' + icons.folder + ' repository</div>' + (files.length
         ? files.map(function (file) {
             const active = selected === file ? ' is-active' : ''
             const fresh = state.newFiles.has(file) && !state.suppressedAnimationPhases.has(phaseId()) ? ' is-new-file' : ''
             const complete = finalRepo[file] === state.repo[file] ? '<i class="file-complete" aria-label="已完成">✓</i>' : ''
-            return '<button type="button" class="' + (active + fresh).trim() + '" data-file="' + escape(file) + '" title="' + escape(file) + '">' + icons.file + '<span>' + escape(file.replace('src/', '')) + '</span>' + complete + '</button>'
+            return '<button type="button" class="' + (active + fresh).trim() + '" data-file="' + escape(file) + '" title="' + escape(file) + '">' + icons.file + '<span>' + escape(file) + '</span>' + complete + '</button>'
           }).join('')
         : '<p class="empty-tree">空目录</p>')
 
       codeTabs.innerHTML = visibleOpen.map(function (file) {
         const active = selected === file ? ' is-active' : ''
-        return '<div class="code-tab' + active + '" role="presentation"><button class="code-tab-select" type="button" role="tab" aria-selected="' + String(selected === file) + '" data-file="' + escape(file) + '">' + icons.file + '<span>' + escape(file.replace('src/', '')) + '</span></button><button class="code-tab-close" type="button" data-close-file="' + escape(file) + '" aria-label="关闭 ' + escape(file) + '">×</button></div>'
+        return '<div class="code-tab' + active + '" role="presentation"><button class="code-tab-select" type="button" role="tab" aria-selected="' + String(selected === file) + '" data-file="' + escape(file) + '" title="' + escape(file) + '">' + icons.file + '<span>' + escape(file) + '</span></button><button class="code-tab-close" type="button" data-close-file="' + escape(file) + '" aria-label="关闭 ' + escape(file) + '">×</button></div>'
       }).join('')
 
       if (!selected || !Object.hasOwn(state.repo, selected)) {
@@ -694,7 +612,6 @@ function tutorialLayout() {
       state.activeIndex = next
       const checkpoint = next >= 0 ? checkpoints[next] : null
       const previous = next > 0 ? checkpoints[next - 1].repo : {}
-      state.previousRepo = previous
       state.repo = checkpoint ? checkpoint.repo : {}
       state.newFiles = new Set(Object.keys(state.repo).filter(function (file) { return !Object.hasOwn(previous, file) }))
       if (!state.navigationLocked) {
@@ -832,7 +749,7 @@ function tutorialLayout() {
       if (innerWidth > 1180) closeDrawer(false)
       if (innerWidth > 1180) panelColumn.removeAttribute('inert')
       else if (!state.drawerOpen) panelColumn.setAttribute('inert', '')
-      if (innerWidth > 680) setMobileNav(false)
+      if (innerWidth > 1180) setMobileNav(false)
     })
 
     updateThemeButton()
@@ -848,13 +765,30 @@ function tutorialLayout() {
 </html>`
 }
 
-function resolveRequestedFile(pathname) {
+async function resolveRequestedFile(pathname) {
   const requested = pathname === '/' ? 'README.md' : decodeURIComponent(pathname.slice(1))
   const segments = requested.split('/')
   if (segments.some(segment => segment.startsWith('.') || segment === 'node_modules')) {
     throw Object.assign(new Error('not found'), { status: 404 })
   }
-  const absolute = resolve(root, requested)
+  const unresolved = resolve(root, requested)
+  if (unresolved !== root && !unresolved.startsWith(root + sep)) {
+    throw Object.assign(new Error('forbidden'), { status: 403 })
+  }
+  let absolute
+  try {
+    absolute = await realpath(unresolved)
+  } catch (error) {
+    if (
+      typeof error === 'object'
+      && error !== null
+      && 'code' in error
+      && (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+    ) {
+      throw Object.assign(new Error('not found'), { status: 404 })
+    }
+    throw error
+  }
   if (absolute !== root && !absolute.startsWith(root + sep)) {
     throw Object.assign(new Error('forbidden'), { status: 403 })
   }
@@ -862,17 +796,18 @@ function resolveRequestedFile(pathname) {
 }
 
 async function renderPath(pathname) {
-  if (pathname === '/') return tutorialLayout()
-  const { absolute, requested } = resolveRequestedFile(pathname)
+  const lesson = lessonByPath.get(pathname)
+  if (lesson !== undefined) return tutorialLayout(lesson)
+  const { absolute, requested } = await resolveRequestedFile(pathname)
   const info = await stat(absolute)
   if (!info.isFile()) throw Object.assign(new Error('not found'), { status: 404 })
   const extension = extname(requested).toLowerCase()
-  const allowed = new Set(['.md', '.ts', '.json', '.yml', '.yaml', '.patch', '.txt'])
+  const allowed = new Set(['.md', '.ts', '.mjs', '.js', '.json', '.yml', '.yaml', '.patch', '.txt'])
   if (!allowed.has(extension) && requested !== 'LICENSE') {
     throw Object.assign(new Error('not found'), { status: 404 })
   }
   const source = await readFile(absolute, 'utf8')
-  const currentPath = `/${relative(root, absolute).split(sep).join('/')}`
+  const currentPath = `/${requested}`
   if (extension === '.md') {
     const title = /^#\s+(.+)$/m.exec(source)?.[1] ?? requested
     const html = addHeadingIds(marked.parse(source))

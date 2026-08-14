@@ -1,0 +1,15 @@
+diff --git a/examples/lifecycle/checkpoints/07-listener-effect/src/reporter.ts b/examples/lifecycle/checkpoints/07-listener-effect/src/reporter.ts
+new file mode 100644
+--- /dev/null
++++ b/examples/lifecycle/checkpoints/07-listener-effect/src/reporter.ts
+@@ -0,0 +1,10 @@
++import type { Context } from '@deepseek-ai/cordis'
++import type {} from './events.ts'
++
++export const name = 'pulse-reporter'
++
++export function apply(ctx: Context): void {
++  ctx.on('pulse/tick', (sequence) => {
++    console.log(`[pulse] ${sequence}`)
++  })
++}

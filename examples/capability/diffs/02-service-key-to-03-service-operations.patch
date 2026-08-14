@@ -1,0 +1,10 @@
+diff --git a/examples/capability/checkpoints/02-service-key/src/definition.ts b/examples/capability/checkpoints/03-service-operations/src/definition.ts
+--- a/examples/capability/checkpoints/02-service-key/src/definition.ts
++++ b/examples/capability/checkpoints/03-service-operations/src/definition.ts
+@@ -28,0 +29,6 @@
++  abstract resolve(request: SummaryRequest): SummarySpec
++
++  abstract summarize(
++    spec: SummarySpec,
++    signal?: AbortSignal,
++  ): Promise<SummaryResult>

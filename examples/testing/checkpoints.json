@@ -1,0 +1,103 @@
+{
+  "id": "05-testing-and-release",
+  "title": "05 · 测试与发布",
+  "tutorial": "docs/05-testing-and-release.md",
+  "sources": [
+    {
+      "source": "tests/greet-unit.spec.ts",
+      "file": "tests/greet-unit.spec.ts",
+      "language": "ts"
+    },
+    {
+      "source": "tests/fiber-disposal.spec.ts",
+      "file": "tests/fiber-disposal.spec.ts",
+      "language": "ts"
+    },
+    {
+      "source": "cordis.yml",
+      "file": "cordis.yml",
+      "language": "yaml"
+    },
+    {
+      "source": "acceptance/loader-runner.mjs",
+      "file": "acceptance/loader-runner.mjs",
+      "language": "js"
+    },
+    {
+      "source": "acceptance/run-command.ts",
+      "file": "acceptance/run-command.ts",
+      "language": "ts"
+    },
+    {
+      "source": "acceptance/entrypoints.ts",
+      "file": "acceptance/entrypoints.ts",
+      "language": "ts"
+    },
+    {
+      "source": "acceptance/package.ts",
+      "file": "acceptance/package.ts",
+      "language": "ts"
+    },
+    {
+      "source": "acceptance/profile.mjs",
+      "file": "acceptance/profile.mjs",
+      "language": "js"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "01-unit-success",
+      "title": "先固定模型接口和成功结果",
+      "file": "tests/greet-unit.spec.ts",
+      "focus": [1, 1]
+    },
+    {
+      "id": "02-unit-error",
+      "title": "再固定 schema 之外的值约束",
+      "file": "tests/greet-unit.spec.ts",
+      "focus": [61, 61]
+    },
+    {
+      "id": "03-fiber-disposal",
+      "title": "从 registry 观察 fiber 撤销",
+      "file": "tests/fiber-disposal.spec.ts",
+      "focus": [1, 1]
+    },
+    {
+      "id": "04-loader-config",
+      "title": "用 cordis.yml 声明真实装配",
+      "file": "cordis.yml",
+      "focus": [1, 1]
+    },
+    {
+      "id": "05-loader-process",
+      "title": "在子进程中经过真实 Loader",
+      "file": "acceptance/loader-runner.mjs",
+      "focus": [1, 1]
+    },
+    {
+      "id": "06-command-evidence",
+      "title": "让验收命令失败即终止",
+      "file": "acceptance/run-command.ts",
+      "focus": [1, 1]
+    },
+    {
+      "id": "07-built-entry",
+      "title": "同时验证 built entry 和 default-export 负例",
+      "file": "acceptance/entrypoints.ts",
+      "focus": [1, 1]
+    },
+    {
+      "id": "08-package-consumer",
+      "title": "验证 tarball allowlist 和裸包名 consumer",
+      "file": "acceptance/package.ts",
+      "focus": [1, 1]
+    },
+    {
+      "id": "09-profile-activation",
+      "title": "验证 profile 安装、激活和启动",
+      "file": "acceptance/profile.mjs",
+      "focus": [1, 1]
+    }
+  ]
+}

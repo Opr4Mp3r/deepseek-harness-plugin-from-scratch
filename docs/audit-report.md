@@ -8,7 +8,7 @@
 
 本报告不是 API 清单。上游生成的 subsystem、tool/config catalog 才是精确签名的事实源；这里保留插件作者需要的跨包模式和风险。
 
-示例兼容性不依赖静态阅读结论。默认 CI 在公开 rc.6 运行时上验证源码 Loader、plain Node.js 构建入口、隔离 tarball consumer 和真实 profile 安装；维护者还用 [`scripts/verify-profile.mjs`](../scripts/verify-profile.mjs) 指向本报告固定的 Harness checkout，执行同一套 `dsh plugin add`、配置组合、profile 启动和 `greet` 调用。
+示例兼容性不依赖静态阅读结论。默认 CI 在公开 rc.6 运行时上验证源码 Loader、plain Node.js 构建入口、隔离 tarball consumer 和真实 profile 安装；维护者还用 [`examples/testing/acceptance/profile.mjs`](../examples/testing/acceptance/profile.mjs) 指向本报告固定的 Harness checkout，执行同一套 `dsh plugin add`、配置组合、profile 启动和 `greet` 调用。
 
 ## 结论与证据
 

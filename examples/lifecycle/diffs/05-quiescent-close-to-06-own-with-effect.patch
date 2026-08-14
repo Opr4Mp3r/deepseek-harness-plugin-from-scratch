@@ -1,0 +1,13 @@
+diff --git a/examples/lifecycle/checkpoints/05-quiescent-close/src/source.ts b/examples/lifecycle/checkpoints/06-own-with-effect/src/source.ts
+--- a/examples/lifecycle/checkpoints/05-quiescent-close/src/source.ts
++++ b/examples/lifecycle/checkpoints/06-own-with-effect/src/source.ts
+@@ -49,0 +50,9 @@
++
++export function apply(ctx: Context, config: Config): void {
++  const resolved = resolveConfig(config)
++  ctx.effect(() => {
++    const source = new PulseSource(resolved.intervalMs)
++    source.start(sequence => ctx.parallel('pulse/tick', sequence))
++    return () => source.close()
++  })
++}

@@ -1,0 +1,27 @@
+diff --git a/examples/testing/checkpoints/01-unit-success/tests/greet-unit.spec.ts b/examples/testing/checkpoints/02-unit-error/tests/greet-unit.spec.ts
+--- a/examples/testing/checkpoints/01-unit-success/tests/greet-unit.spec.ts
++++ b/examples/testing/checkpoints/02-unit-error/tests/greet-unit.spec.ts
+@@ -59,0 +60,23 @@
++
++describe('greet value constraints', () => {
++  it('rejects a blank name after schema validation', async () => {
++    const ctx = await createRuntime()
++    try {
++      const result = await ctx.tools.execute({
++        signal: new AbortController().signal,
++        callId: CallId('unit-error'),
++        name: 'greet',
++        arguments: { name: '   ' },
++      })
++      expect(result.isError).toBe(true)
++      expect(result.content).toEqual([
++        expect.objectContaining({
++          type: 'text',
++          text: expect.stringContaining('must not be blank'),
++        }),
++      ])
++    } finally {
++      await ctx.fiber.dispose()
++    }
++  })
++})

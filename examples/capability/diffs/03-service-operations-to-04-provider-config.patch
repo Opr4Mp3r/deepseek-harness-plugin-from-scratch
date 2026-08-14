@@ -1,0 +1,41 @@
+diff --git a/examples/capability/checkpoints/04-provider-config/src/provider.ts b/examples/capability/checkpoints/04-provider-config/src/provider.ts
+new file mode 100644
+--- /dev/null
++++ b/examples/capability/checkpoints/04-provider-config/src/provider.ts
+@@ -0,0 +1,36 @@
++import type { Context } from '@deepseek-ai/cordis'
++import z from '@deepseek-ai/schemastery'
++import Summarizer from './definition.ts'
++import type {
++  SummaryRequest,
++  SummaryResult,
++  SummarySpec,
++} from './definition.ts'
++
++export interface Config {
++  defaultMaxCharacters?: number
++  maxCharactersCap?: number
++}
++
++export const Config: z<Config> = z.object({
++  defaultMaxCharacters: z.number().default(80),
++  maxCharactersCap: z.number().default(400),
++})
++
++type ResolvedConfig = Required<Config>
++
++function positiveInteger(name: string, value: number): void {
++  if (!Number.isInteger(value) || value < 1) {
++    throw new Error(`summarizer-local: ${name} must be a positive integer`)
++  }
++}
++
++function resolveConfig(config: Config): ResolvedConfig {
++  const resolved = config as ResolvedConfig
++  positiveInteger('defaultMaxCharacters', resolved.defaultMaxCharacters)
++  positiveInteger('maxCharactersCap', resolved.maxCharactersCap)
++  if (resolved.defaultMaxCharacters > resolved.maxCharactersCap) {
++    throw new Error('summarizer-local: defaultMaxCharacters must not exceed maxCharactersCap')
++  }
++  return resolved
++}

@@ -1,4 +1,7 @@
 {
+  "id": "01-minimal-plugin",
+  "title": "01 · 最小插件",
+  "format": "flat",
   "source": "src/index.ts",
   "file": "src/index.ts",
   "tutorial": "docs/01-minimal-plugin.md",

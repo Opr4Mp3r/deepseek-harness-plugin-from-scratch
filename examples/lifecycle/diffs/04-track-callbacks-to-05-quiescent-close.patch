@@ -1,0 +1,11 @@
+diff --git a/examples/lifecycle/checkpoints/04-track-callbacks/src/source.ts b/examples/lifecycle/checkpoints/05-quiescent-close/src/source.ts
+--- a/examples/lifecycle/checkpoints/04-track-callbacks/src/source.ts
++++ b/examples/lifecycle/checkpoints/05-quiescent-close/src/source.ts
+@@ -41,0 +42,7 @@
++  async close(): Promise<void> {
++    if (this.#timer !== undefined) {
++      clearInterval(this.#timer)
++      this.#timer = undefined
++    }
++    await Promise.allSettled([...this.#inFlight])
++  }

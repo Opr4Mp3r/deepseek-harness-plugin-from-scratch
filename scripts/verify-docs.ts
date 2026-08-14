@@ -108,6 +108,26 @@ for (const [name, version] of Object.entries(pinnedPackages)) {
 }
 
 const readme = await readFile('README.md', 'utf8')
+const tutorialCatalog = JSON.parse(await readFile('examples/tutorials.json', 'utf8')) as {
+  lessons?: unknown
+}
+if (!Array.isArray(tutorialCatalog.lessons) || tutorialCatalog.lessons.length === 0) {
+  throw new Error('examples/tutorials.json needs a non-empty lessons array')
+}
+let tutorialCheckpointCount = 0
+for (const manifestPath of tutorialCatalog.lessons) {
+  if (typeof manifestPath !== 'string') throw new Error('tutorial manifest paths must be strings')
+  const tutorialManifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+    checkpoints?: unknown
+  }
+  if (!Array.isArray(tutorialManifest.checkpoints)) {
+    throw new Error(`${manifestPath} needs checkpoints`)
+  }
+  tutorialCheckpointCount += tutorialManifest.checkpoints.length
+}
+if (!readme.includes(`${tutorialCheckpointCount} 个 checkpoint`)) {
+  throw new Error(`README.md must cite the generated ${tutorialCheckpointCount} checkpoint total`)
+}
 for (const version of new Set([
   ...Object.values(baseline),
   ...Object.values(profileBaseline),

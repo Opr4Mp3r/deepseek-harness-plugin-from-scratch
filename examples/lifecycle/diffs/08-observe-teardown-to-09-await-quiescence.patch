@@ -1,0 +1,27 @@
+diff --git a/examples/lifecycle/checkpoints/08-observe-teardown/tests/lifecycle.spec.ts b/examples/lifecycle/checkpoints/09-await-quiescence/tests/lifecycle.spec.ts
+--- a/examples/lifecycle/checkpoints/08-observe-teardown/tests/lifecycle.spec.ts
++++ b/examples/lifecycle/checkpoints/09-await-quiescence/tests/lifecycle.spec.ts
+@@ -35,0 +36,23 @@
++  it('does not finish disposal while an emitted callback is running', async () => {
++    vi.useFakeTimers()
++    const ctx = new Context()
++    const gate = Promise.withResolvers<void>()
++    let entered = false
++    ctx.on('pulse/tick', async () => {
++      entered = true
++      await gate.promise
++    })
++    const fiber = await ctx.plugin(source, { intervalMs: 10 })
++    await vi.advanceTimersByTimeAsync(10)
++    expect(entered).toBe(true)
++
++    let disposed = false
++    const disposal = Promise.resolve(fiber.dispose()).then(() => { disposed = true })
++    await Promise.resolve()
++    expect(disposed).toBe(false)
++
++    gate.resolve(undefined)
++    await disposal
++    expect(disposed).toBe(true)
++    await ctx.fiber.dispose()
++  })

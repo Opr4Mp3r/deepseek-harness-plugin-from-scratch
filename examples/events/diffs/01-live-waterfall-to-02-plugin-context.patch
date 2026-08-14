@@ -1,0 +1,16 @@
+diff --git a/examples/events/checkpoints/02-plugin-context/src/context.ts b/examples/events/checkpoints/02-plugin-context/src/context.ts
+new file mode 100644
+--- /dev/null
++++ b/examples/events/checkpoints/02-plugin-context/src/context.ts
+@@ -0,0 +1,11 @@
++import { createUserMessage, type UserMessage } from '@deepseek-ai/dsh-llm'
++
++export function createProjectRuleContext(rule: string): UserMessage {
++  return createUserMessage({
++    content: [{
++      type: 'text',
++      text: `Project rule for the rest of this session:\n${rule}`,
++    }],
++    source: { kind: 'plugin', plugin: 'durable-project-rule' },
++  })
++}

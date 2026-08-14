@@ -1,0 +1,13 @@
+diff --git a/examples/lifecycle/checkpoints/02-source-config/src/source.ts b/examples/lifecycle/checkpoints/03-resource-state/src/source.ts
+--- a/examples/lifecycle/checkpoints/02-source-config/src/source.ts
++++ b/examples/lifecycle/checkpoints/03-resource-state/src/source.ts
+@@ -23,0 +24,9 @@
++
++class PulseSource {
++  #timer: NodeJS.Timeout | undefined
++  #inFlight = new Set<Promise<void>>()
++  #sequence = 0
++
++  constructor(private readonly intervalMs: number) {}
++
++}

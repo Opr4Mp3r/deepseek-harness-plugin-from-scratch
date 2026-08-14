@@ -1,0 +1,22 @@
+import {
+  Session,
+  SessionId,
+  type SessionEvent,
+} from '@deepseek-ai/dsh-session'
+import { expect, it } from 'vitest'
+
+import { runJourney } from './harness.ts'
+
+it('replays identical model history after a JSON storage round trip', async () => {
+  const { ctx, agent } = await runJourney()
+  try {
+    const stored = JSON.parse(
+      JSON.stringify(agent.session.events),
+    ) as SessionEvent[]
+    const replay = Session.create(SessionId('json-replay'), stored)
+
+    expect(replay.deriveMessages()).toEqual(agent.session.deriveMessages())
+  } finally {
+    await ctx.fiber.dispose()
+  }
+})
